@@ -10,6 +10,15 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  logger: {
+    error(code, metadata) {
+      if (code === "JWT_SESSION_ERROR") {
+        return;
+      }
+
+      console.error(`[next-auth][${code}]`, metadata);
+    },
+  },
   providers: [
     CredentialsProvider({
       name: "Credentials",

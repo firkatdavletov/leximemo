@@ -3,8 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/auth-options";
 
 export async function getCurrentUser() {
-  const session = await getServerSession(authOptions);
-  return session?.user ?? null;
+  try {
+    const session = await getServerSession(authOptions);
+    return session?.user ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getCurrentUserId(): Promise<string | null> {

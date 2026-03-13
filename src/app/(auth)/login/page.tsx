@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 import { LoginForm } from "@/features/auth/login-form";
 import { getCurrentUserId } from "@/server/auth/session";
@@ -22,7 +23,9 @@ export default async function LoginPage() {
         />
 
         <div className="mt-6">
-          <LoginForm />
+          <Suspense fallback={<p className="text-sm text-muted">Загрузка формы...</p>}>
+            <LoginForm />
+          </Suspense>
         </div>
       </section>
     </Container>
