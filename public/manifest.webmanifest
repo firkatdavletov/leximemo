@@ -1,0 +1,16 @@
+{
+  "name": "LexiMemo MVP",
+  "short_name": "LexiMemo",
+  "description": "MVP-приложение для изучения и запоминания иностранных слов.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LexiMemo MVP (Next.js + Prisma)
 
-## Getting Started
+Стартовый fullstack-каркас для дипломного MVP: приложение для изучения и запоминания иностранных слов (по типу Anki).
 
-First, run the development server:
+## Что уже настроено
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS + ESLint
+- Backend в этом же проекте через Route Handlers
+- Prisma ORM + PostgreSQL (под Neon/Postgres-совместимые БД)
+- Базовые API endpoints:
+  - `GET /api/health`
+  - `GET /api/decks`
+  - `POST /api/decks`
+- Базовые страницы:
+  - `/`
+  - `/login`
+  - `/decks`
+  - `/decks/[deckId]`
+- UI-shell компоненты:
+  - `Header`, `Container`, `PageTitle`, `EmptyState`, `Button`
+- Подготовка под PWA (добавлен `manifest.webmanifest` без offline-first логики)
+
+## Быстрый старт
+
+1. Установите зависимости:
+
+```bash
+npm install
+```
+
+2. Создайте локальный env-файл:
+
+```bash
+cp .env.example .env
+```
+
+3. Заполните `DATABASE_URL` и `DIRECT_URL` в `.env`.
+
+4. Сгенерируйте Prisma Client:
+
+```bash
+npm run prisma:generate
+```
+
+5. Примените первую миграцию:
+
+```bash
+npm run prisma:migrate -- --name init
+```
+
+6. Запустите dev-сервер:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Prisma команды
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run prisma:format
+npm run prisma:generate
+npm run prisma:migrate -- --name init
+npm run prisma:studio
+```
 
-## Learn More
+## Структура проекта
 
-To learn more about Next.js, take a look at the following resources:
+```text
+src/
+  app/
+    (auth)/login/page.tsx
+    (app)/decks/page.tsx
+    (app)/decks/[deckId]/page.tsx
+    api/health/route.ts
+    api/decks/route.ts
+    layout.tsx
+    page.tsx
+  entities/
+    deck/model/types.ts
+  features/
+    README.md
+  lib/
+    prisma.ts
+  server/
+    decks/deck.service.ts
+    decks/mock-data.ts
+  shared/
+    config/app.ts
+    lib/cn.ts
+    types/api.ts
+    ui/button.tsx
+    ui/container.tsx
+    ui/page-title.tsx
+    ui/empty-state.tsx
+  widgets/
+    header/header.tsx
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Что делать дальше
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Добавить реальную авторизацию и привязку данных к пользователю.
+- Реализовать CRUD для карточек и колод.
+- Внедрить логику повторений (SM-2 или упрощенный алгоритм).
+- Добавить валидацию входных данных и централизованную обработку ошибок.
+- Расширить PWA-подготовку: иконки, install prompt, service worker.
