@@ -11,6 +11,7 @@ datasource db {
 model User {
   id           String        @id @default(cuid())
   email        String        @unique
+  passwordHash String
   name         String?
   decks        Deck[]
   achievements Achievement[]
@@ -33,8 +34,10 @@ model Deck {
 
 model Card {
   id            String          @id @default(cuid())
-  front         String
-  back          String
+  word          String
+  translation   String
+  example       String?
+  imageUrl      String?
   deckId        String
   deck          Deck            @relation(fields: [deckId], references: [id], onDelete: Cascade)
   reviewHistory ReviewHistory[]

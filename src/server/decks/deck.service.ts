@@ -1,25 +1,20 @@
-import { randomUUID } from "node:crypto";
-
-import type { CreateDeckRequestDto, DeckDto } from "@/entities/deck/model/types";
+import type {
+  CreateDeckRequestDto,
+  DeckDto,
+  UpdateDeckRequestDto,
+} from "@/entities/deck/model/types";
 import { prisma } from "@/lib/prisma";
-
-import { MOCK_DECKS } from "./mock-data";
 
 type DeckWithCount = {
   id: string;
   title: string;
   description: string | null;
+  createdAt: Date;
   updatedAt: Date;
   _count: {
     cards: number;
   };
 };
-
-const DEMO_USER_EMAIL = "demo@leximemo.local";
-
-function isDatabaseConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL);
-}
 
 function mapDeckToDto(deck: DeckWithCount): DeckDto {
   return {
@@ -27,114 +22,114 @@ function mapDeckToDto(deck: DeckWithCount): DeckDto {
     title: deck.title,
     description: deck.description,
     cardCount: deck._count.cards,
+    createdAt: deck.createdAt.toISOString(),
     updatedAt: deck.updatedAt.toISOString(),
   };
 }
 
-async function ensureDemoUserId(): Promise<string> {
-  const demoUser = await prisma.user.upsert({
-    where: { email: DEMO_USER_EMAIL },
-    update: {},
-    create: {
-      email: DEMO_USER_EMAIL,
-      name: "Demo User",
+const deckWithCountInclude = {
+  _count: {
+    select: {
+      cards: true,
     },
+  },
+} as const;
+
+export async function listUserDecks(userId: string): Promise<DeckDto[]> {
+  const decks = await prisma.deck.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    include: deckWithCountInclude,
   });
 
-  return demoUser.id;
+  return decks.map(mapDeckToDto);
 }
 
-export async function getDecks(): Promise<DeckDto[]> {
-  if (!isDatabaseConfigured()) {
-    return MOCK_DECKS;
-  }
-
-  try {
-    const decks = await prisma.deck.findMany({
-      orderBy: { updatedAt: "desc" },
-      include: {
-        _count: {
-          select: {
-            cards: true,
-          },
-        },
-      },
-    });
-
-    return decks.map(mapDeckToDto);
-  } catch {
-    return MOCK_DECKS;
-  }
-}
-
-export async function getDeckById(deckId: string): Promise<DeckDto | null> {
-  const mockDeck = MOCK_DECKS.find((deck) => deck.id === deckId) ?? null;
-
-  if (!isDatabaseConfigured()) {
-    return mockDeck;
-  }
-
-  try {
-    const deck = await prisma.deck.findUnique({
-      where: { id: deckId },
-      include: {
-        _count: {
-          select: {
-            cards: true,
-          },
-        },
-      },
-    });
-
-    if (!deck) {
-      return mockDeck;
-    }
-
-    return mapDeckToDto(deck);
-  } catch {
-    return mockDeck;
-  }
-}
-
-export async function createDeck(input: CreateDeckRequestDto): Promise<DeckDto> {
+export async function createUserDeck(
+  userId: string,
+  input: CreateDeckRequestDto,
+): Promise<DeckDto> {
   const title = input.title.trim();
   const description = input.description?.trim() || null;
 
-  if (!isDatabaseConfigured()) {
-    return {
-      id: `mock-${randomUUID()}`,
+  const deck = await prisma.deck.create({
+    data: {
+      userId,
       title,
       description,
-      cardCount: 0,
-      updatedAt: new Date().toISOString(),
-    };
+    },
+    include: deckWithCountInclude,
+  });
+
+  return mapDeckToDto(deck);
+}
+
+export async function getUserDeckById(
+  userId: string,
+  deckId: string,
+): Promise<DeckDto | null> {
+  const deck = await prisma.deck.findFirst({
+    where: {
+      id: deckId,
+      userId,
+    },
+    include: deckWithCountInclude,
+  });
+
+  if (!deck) {
+    return null;
   }
 
-  try {
-    const userId = await ensureDemoUserId();
-    const createdDeck = await prisma.deck.create({
-      data: {
-        title,
-        description,
-        userId,
-      },
-      include: {
-        _count: {
-          select: {
-            cards: true,
-          },
-        },
-      },
-    });
+  return mapDeckToDto(deck);
+}
 
-    return mapDeckToDto(createdDeck);
-  } catch {
-    return {
-      id: `mock-${randomUUID()}`,
+export async function updateUserDeck(
+  userId: string,
+  deckId: string,
+  input: UpdateDeckRequestDto,
+): Promise<DeckDto | null> {
+  const title = input.title.trim();
+  const description = input.description?.trim() || null;
+
+  const updateResult = await prisma.deck.updateMany({
+    where: {
+      id: deckId,
+      userId,
+    },
+    data: {
       title,
       description,
-      cardCount: 0,
-      updatedAt: new Date().toISOString(),
-    };
+    },
+  });
+
+  if (updateResult.count === 0) {
+    return null;
   }
+
+  return getUserDeckById(userId, deckId);
+}
+
+export async function deleteUserDeck(userId: string, deckId: string): Promise<boolean> {
+  const deleteResult = await prisma.deck.deleteMany({
+    where: {
+      id: deckId,
+      userId,
+    },
+  });
+
+  return deleteResult.count > 0;
+}
+
+export async function userOwnsDeck(userId: string, deckId: string): Promise<boolean> {
+  const deck = await prisma.deck.findFirst({
+    where: {
+      id: deckId,
+      userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return Boolean(deck);
 }

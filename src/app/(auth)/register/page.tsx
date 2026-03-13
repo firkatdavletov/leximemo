@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 
-import { LoginForm } from "@/features/auth/login-form";
+import { RegisterForm } from "@/features/auth/register-form";
 import { getCurrentUserId } from "@/server/auth/session";
 import { ROUTES } from "@/shared/config/app";
 import { Container } from "@/shared/ui/container";
 import { PageTitle } from "@/shared/ui/page-title";
 
-export default async function LoginPage() {
+export default async function RegisterPage() {
   const userId = await getCurrentUserId();
 
   if (userId) {
@@ -17,12 +17,12 @@ export default async function LoginPage() {
     <Container className="max-w-md">
       <section className="rounded-2xl border border-border bg-surface p-8 shadow-sm">
         <PageTitle
-          title="Вход"
-          description="Войдите в аккаунт, чтобы работать со своими колодами и карточками."
+          title="Регистрация"
+          description="Создайте аккаунт, чтобы сохранять свои колоды и карточки."
         />
 
         <div className="mt-6">
-          <LoginForm />
+          <RegisterForm />
         </div>
       </section>
     </Container>

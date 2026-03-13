@@ -5,8 +5,21 @@ import type {
   DeckItemDto,
   DeckListDto,
 } from "@/entities/deck/model/types";
-import { createDeck, getDecks } from "@/server/decks/deck.service";
+import { getCurrentUserId } from "@/server/auth/session";
+import { createUserDeck, listUserDecks } from "@/server/decks/deck.service";
+import { getFirstValidationError } from "@/server/http/validation";
+import { deckSchema } from "@/server/validation/deck.schema";
 import type { ApiError, ApiSuccess } from "@/shared/types/api";
+
+function unauthorized() {
+  return NextResponse.json<ApiError>(
+    {
+      ok: false,
+      error: "Требуется авторизация.",
+    },
+    { status: 401 },
+  );
+}
 
 function badRequest(message: string) {
   return NextResponse.json<ApiError>(
@@ -19,7 +32,13 @@ function badRequest(message: string) {
 }
 
 export async function GET() {
-  const decks = await getDecks();
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    return unauthorized();
+  }
+
+  const decks = await listUserDecks(userId);
 
   return NextResponse.json<ApiSuccess<DeckListDto>>({
     ok: true,
@@ -30,6 +49,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    return unauthorized();
+  }
+
   let body: unknown;
 
   try {
@@ -38,22 +63,18 @@ export async function POST(request: Request) {
     return badRequest("Некорректный JSON в теле запроса.");
   }
 
-  if (!body || typeof body !== "object") {
-    return badRequest("Ожидается объект с полями title и description.");
+  const parsed = deckSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return badRequest(getFirstValidationError(parsed.error));
   }
 
-  const payload = body as Partial<CreateDeckRequestDto>;
-  const title = payload.title?.trim();
-  const description = payload.description?.trim();
+  const deckInput: CreateDeckRequestDto = {
+    title: parsed.data.title,
+    description: parsed.data.description,
+  };
 
-  if (!title) {
-    return badRequest("Поле title обязательно.");
-  }
-
-  const deck = await createDeck({
-    title,
-    description,
-  });
+  const deck = await createUserDeck(userId, deckInput);
 
   return NextResponse.json<ApiSuccess<DeckItemDto>>(
     {

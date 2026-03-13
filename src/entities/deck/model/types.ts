@@ -3,6 +3,7 @@ export type DeckDto = {
   title: string;
   description: string | null;
   cardCount: number;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -18,3 +19,5 @@ export type CreateDeckRequestDto = {
   title: string;
   description?: string;
 };
+
+export type UpdateDeckRequestDto = CreateDeckRequestDto;

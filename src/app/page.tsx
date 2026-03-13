@@ -7,19 +7,16 @@ import { PageTitle } from "@/shared/ui/page-title";
 
 const highlights = [
   {
-    title: "Колоды и карточки",
-    description:
-      "Базовые сущности уже готовы: можно хранить колоды, карточки и историю повторений.",
+    title: "Авторизация",
+    description: "Регистрация и вход через email/password на базе Auth.js.",
   },
   {
-    title: "Backend в Next.js",
-    description:
-      "Route Handlers для health-check и колод находятся в этом же проекте без отдельного сервиса.",
+    title: "CRUD колод",
+    description: "Создание, просмотр, редактирование и удаление колод пользователя.",
   },
   {
-    title: "Prisma + PostgreSQL",
-    description:
-      "Схема инициализирована под Neon/Postgres. После заполнения .env можно запускать миграции.",
+    title: "CRUD карточек",
+    description: "Полный цикл работы с карточками внутри каждой колоды.",
   },
 ];
 
@@ -29,7 +26,7 @@ export default function HomePage() {
       <section className="rounded-2xl border border-border bg-surface p-8 shadow-sm">
         <PageTitle
           title={`${APP_NAME} — дипломный MVP`}
-          description="Стартовая fullstack-заготовка для приложения по изучению слов в стиле Anki."
+          description="Приложение для изучения и запоминания слов по карточкам."
         />
 
         <p className="mt-5 max-w-3xl text-sm leading-6 text-muted">{APP_DESCRIPTION}</p>
@@ -38,11 +35,11 @@ export default function HomePage() {
           <Link href={ROUTES.decks} className={buttonClassName()}>
             Перейти к колодам
           </Link>
-          <Link
-            href={ROUTES.login}
-            className={buttonClassName({ variant: "secondary" })}
-          >
-            Страница логина
+          <Link href={ROUTES.login} className={buttonClassName({ variant: "secondary" })}>
+            Войти
+          </Link>
+          <Link href={ROUTES.register} className={buttonClassName({ variant: "secondary" })}>
+            Регистрация
           </Link>
         </div>
       </section>
