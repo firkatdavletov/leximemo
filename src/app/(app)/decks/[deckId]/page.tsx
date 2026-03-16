@@ -43,9 +43,17 @@ export default async function DeckDetailsPage({ params }: DeckDetailsPageProps) 
         title={deck.title}
         description={deck.description ?? "Описание пока не добавлено."}
         action={
-          <Link href={`/decks/${deck.id}/cards/new`} className={buttonClassName()}>
-            Добавить карточку
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/decks/${deck.id}/study`} className={buttonClassName()}>
+              Начать обучение
+            </Link>
+            <Link
+              href={`/decks/${deck.id}/cards/new`}
+              className={buttonClassName({ variant: "secondary" })}
+            >
+              Добавить карточку
+            </Link>
+          </div>
         }
       />
 
@@ -75,6 +83,15 @@ export default async function DeckDetailsPage({ params }: DeckDetailsPageProps) 
                   <p className="text-lg font-semibold text-foreground">{card.word}</p>
                   <p className="text-sm text-muted">{card.translation}</p>
                   {card.example ? <p className="text-sm text-muted">Пример: {card.example}</p> : null}
+                  <p className="text-xs text-muted">
+                    Интервал: {card.intervalDays || 0} дн., повторений: {card.repetitionsCount}
+                  </p>
+                  <p className="text-xs text-muted">
+                    Следующее повторение:{" "}
+                    {card.nextReviewAt
+                      ? new Date(card.nextReviewAt).toLocaleString("ru-RU")
+                      : "еще не назначено"}
+                  </p>
                   {card.imageUrl ? (
                     <a
                       href={card.imageUrl}

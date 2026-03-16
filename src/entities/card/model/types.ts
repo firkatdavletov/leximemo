@@ -1,3 +1,5 @@
+import type { ReviewGrade } from "@/entities/review/model/types";
+
 export type CardDto = {
   id: string;
   deckId: string;
@@ -5,6 +7,13 @@ export type CardDto = {
   translation: string;
   example: string | null;
   imageUrl: string | null;
+  repetitionsCount: number;
+  intervalDays: number;
+  easeFactor: number;
+  lastReviewedAt: string | null;
+  nextReviewAt: string | null;
+  lastGrade: ReviewGrade | null;
+  mistakesCount: number;
   createdAt: string;
   updatedAt: string;
 };

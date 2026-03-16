@@ -3,6 +3,7 @@ import type {
   CreateCardRequestDto,
   UpdateCardRequestDto,
 } from "@/entities/card/model/types";
+import type { ReviewGrade } from "@/entities/review/model/types";
 import { prisma } from "@/lib/prisma";
 
 type CardRecord = {
@@ -12,9 +13,32 @@ type CardRecord = {
   translation: string;
   example: string | null;
   imageUrl: string | null;
+  repetitionsCount: number;
+  intervalDays: number;
+  easeFactor: number;
+  lastReviewedAt: Date | null;
+  nextReviewAt: Date | null;
+  lastGrade: "HARD" | "NORMAL" | "EASY" | null;
+  mistakesCount: number;
   createdAt: Date;
   updatedAt: Date;
 };
+
+function mapPrismaGradeToDto(grade: CardRecord["lastGrade"]): ReviewGrade | null {
+  if (!grade) {
+    return null;
+  }
+
+  if (grade === "HARD") {
+    return "hard";
+  }
+
+  if (grade === "EASY") {
+    return "easy";
+  }
+
+  return "normal";
+}
 
 function mapCardToDto(card: CardRecord): CardDto {
   return {
@@ -24,6 +48,13 @@ function mapCardToDto(card: CardRecord): CardDto {
     translation: card.translation,
     example: card.example,
     imageUrl: card.imageUrl,
+    repetitionsCount: card.repetitionsCount,
+    intervalDays: card.intervalDays,
+    easeFactor: card.easeFactor,
+    lastReviewedAt: card.lastReviewedAt?.toISOString() ?? null,
+    nextReviewAt: card.nextReviewAt?.toISOString() ?? null,
+    lastGrade: mapPrismaGradeToDto(card.lastGrade),
+    mistakesCount: card.mistakesCount,
     createdAt: card.createdAt.toISOString(),
     updatedAt: card.updatedAt.toISOString(),
   };

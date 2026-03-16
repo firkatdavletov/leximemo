@@ -8,12 +8,19 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum ReviewGrade {
+  HARD
+  NORMAL
+  EASY
+}
+
 model User {
   id           String        @id @default(cuid())
   email        String        @unique
   passwordHash String
   name         String?
   decks        Deck[]
+  reviewHistory ReviewHistory[]
   achievements Achievement[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -26,6 +33,7 @@ model Deck {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   cards       Card[]
+  reviewHistory ReviewHistory[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -38,6 +46,13 @@ model Card {
   translation   String
   example       String?
   imageUrl      String?
+  repetitionsCount Int          @default(0)
+  intervalDays  Int             @default(0)
+  easeFactor    Float           @default(2.5)
+  lastReviewedAt DateTime?
+  nextReviewAt  DateTime?
+  lastGrade     ReviewGrade?
+  mistakesCount Int             @default(0)
   deckId        String
   deck          Deck            @relation(fields: [deckId], references: [id], onDelete: Cascade)
   reviewHistory ReviewHistory[]
@@ -45,16 +60,25 @@ model Card {
   updatedAt     DateTime        @updatedAt
 
   @@index([deckId])
+  @@index([nextReviewAt])
+  @@index([deckId, nextReviewAt])
 }
 
 model ReviewHistory {
-  id           String   @id @default(cuid())
-  cardId       String
-  card         Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  rating       Int
-  intervalDays Int?
-  reviewedAt   DateTime @default(now())
+  id                   String      @id @default(cuid())
+  userId               String
+  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deckId               String
+  deck                 Deck        @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  cardId               String
+  card                 Card        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  grade                ReviewGrade
+  previousIntervalDays Int?
+  newIntervalDays      Int
+  reviewedAt           DateTime    @default(now())
 
+  @@index([userId, reviewedAt])
+  @@index([deckId, reviewedAt])
   @@index([cardId, reviewedAt])
 }
 

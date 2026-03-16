@@ -1,6 +1,6 @@
 # LexiMemo MVP (Next.js + Prisma + Auth.js)
 
-Дипломный MVP для изучения слов по карточкам.
+Дипломный MVP для изучения слов по карточкам в стиле Anki.
 
 ## Технологии
 
@@ -9,16 +9,57 @@
 - Prisma ORM
 - PostgreSQL
 - Auth.js (NextAuth) + Credentials
-- bcryptjs для хеширования паролей
+- bcryptjs
+- zod
 
-## Реализовано на этом этапе
+## Реализовано
 
-- Регистрация и логин по email/password
-- Logout
+- Регистрация, логин и logout
 - Защищенные страницы `/decks/**`
-- Проверка ownership на сервере для всех операций с колодами и карточками
+- Ownership-check на сервере для колод и карточек
 - CRUD колод
-- CRUD карточек внутри колод
+- CRUD карточек
+- Режим обучения по колоде
+- Упрощенный алгоритм интервального повторения
+- Хранение прогресса карточек и ReviewHistory
+
+## Режим обучения
+
+На странице колоды есть кнопка `Начать обучение`.
+
+Учебная сессия:
+
+1. Загружает карточки колоды, которые доступны к повторению (`nextReviewAt IS NULL` или `nextReviewAt <= now`).
+2. Показывает слово.
+3. После кнопки `Показать ответ` показывает перевод/пример/картинку.
+4. Пользователь выбирает оценку: `Сложно`, `Нормально`, `Легко`.
+5. Сервер пересчитывает интервал, обновляет прогресс карточки и пишет запись в `ReviewHistory`.
+6. После прохождения всех карточек показывается экран завершения со статистикой сессии.
+
+## Алгоритм интервального повторения (MVP)
+
+Для карточки храним:
+
+- `repetitionsCount`
+- `intervalDays`
+- `easeFactor`
+- `lastReviewedAt`
+- `nextReviewAt`
+- `lastGrade`
+- `mistakesCount`
+
+Формула:
+
+- Первая оценка:
+  - `Сложно` -> `1` день
+  - `Нормально` -> `2` дня
+  - `Легко` -> `4` дня
+- Далее:
+  - `Сложно` -> `max(1, floor(currentInterval * 0.7))`
+  - `Нормально` -> `max(1, ceil(currentInterval * 1.8))`
+  - `Легко` -> `max(2, ceil(currentInterval * 2.5))`
+
+`easeFactor` тоже обновляется (упрощенно, с ограничением диапазона), чтобы метрику можно было использовать в следующих этапах.
 
 ## Быстрый старт
 
@@ -34,14 +75,14 @@ npm install
 cp .env.example .env
 ```
 
-3. Заполните переменные окружения в `.env`:
+3. Проверьте переменные в `.env`:
 
 - `DATABASE_URL`
 - `DIRECT_URL`
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
 
-Пример для локальной БД:
+Пример:
 
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5433/firkatdavletov?schema=public"
@@ -54,22 +95,20 @@ NEXTAUTH_SECRET="your-long-random-secret"
 
 ```bash
 npm run prisma:generate
-npm run prisma:migrate -- --name init
+npm run prisma:migrate -- --name review_mode
 ```
 
-5. Запустите seed с тестовым пользователем:
+5. Запустите seed:
 
 ```bash
 npm run prisma:seed
 ```
 
-6. Запустите проект:
+6. Запустите приложение:
 
 ```bash
 npm run dev
 ```
-
-Откройте `http://localhost:3000`.
 
 ## Тестовый пользователь
 
@@ -77,12 +116,7 @@ npm run dev
 
 - email: `demo@leximemo.local`
 - password: `demo12345`
-
-Можно переопределить через переменные:
-
-- `SEED_TEST_EMAIL`
-- `SEED_TEST_PASSWORD`
-- `SEED_TEST_NAME`
+- создается демо-колода `Demo English Deck` с карточками
 
 ## Маршруты страниц
 
@@ -94,6 +128,7 @@ npm run dev
 - `/decks/[deckId]/edit`
 - `/decks/[deckId]/cards/new`
 - `/decks/[deckId]/cards/[cardId]/edit`
+- `/decks/[deckId]/study`
 
 ## API маршруты
 
@@ -104,6 +139,8 @@ npm run dev
 - `GET|PUT|DELETE /api/decks/[deckId]`
 - `GET|POST /api/decks/[deckId]/cards`
 - `GET|PUT|DELETE /api/decks/[deckId]/cards/[cardId]`
+- `GET /api/decks/[deckId]/study`
+- `POST /api/decks/[deckId]/study/review`
 
 ## Prisma команды
 
@@ -115,8 +152,9 @@ npm run prisma:studio
 npm run prisma:seed
 ```
 
-## Важно по безопасности
+## Безопасность
 
-- Пароли в БД хранятся только в виде хеша (`passwordHash`).
-- Ownership-проверка выполняется на сервере во всех CRUD-операциях.
-- Пользователь не может читать/изменять/удалять чужие колоды и карточки.
+- Пароли хранятся только в виде хеша (`passwordHash`).
+- Любые приватные операции выполняются только от текущего пользователя.
+- На сервере везде выполняется ownership-check.
+- Нельзя читать/изменять/удалять чужие колоды, карточки и review-данные.
