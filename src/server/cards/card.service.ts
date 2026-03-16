@@ -122,6 +122,46 @@ export async function createCardInDeck(
   return mapCardToDto(card);
 }
 
+export async function createManyCardsInDeck(
+  userId: string,
+  deckId: string,
+  cards: Array<{
+    word: string;
+    translation: string;
+    example?: string | null;
+  }>,
+): Promise<number | null> {
+  const deck = await prisma.deck.findFirst({
+    where: {
+      id: deckId,
+      userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!deck) {
+    return null;
+  }
+
+  if (cards.length === 0) {
+    return 0;
+  }
+
+  const result = await prisma.card.createMany({
+    data: cards.map((card) => ({
+      deckId,
+      word: card.word.trim(),
+      translation: card.translation.trim(),
+      example: card.example?.trim() || null,
+      imageUrl: null,
+    })),
+  });
+
+  return result.count;
+}
+
 export async function getUserCardById(
   userId: string,
   deckId: string,

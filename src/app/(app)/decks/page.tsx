@@ -1,7 +1,9 @@
 import Link from "next/link";
 
+import { ProgressOverview } from "@/features/progress/progress-overview";
 import { getCurrentUserId } from "@/server/auth/session";
 import { listUserDecks } from "@/server/decks/deck.service";
+import { getUserProgress } from "@/server/progress/progress.service";
 import { buttonClassName } from "@/shared/ui/button";
 import { Container } from "@/shared/ui/container";
 import { EmptyState } from "@/shared/ui/empty-state";
@@ -18,7 +20,10 @@ export default async function DecksPage() {
     return null;
   }
 
-  const decks = await listUserDecks(userId);
+  const [decks, progress] = await Promise.all([
+    listUserDecks(userId),
+    getUserProgress(userId),
+  ]);
 
   return (
     <Container className="space-y-6">
@@ -31,6 +36,8 @@ export default async function DecksPage() {
           </Link>
         }
       />
+
+      <ProgressOverview progress={progress} />
 
       {decks.length === 0 ? (
         <EmptyState

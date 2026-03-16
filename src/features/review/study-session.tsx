@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import type { AchievementUnlockDto } from "@/entities/achievement/model/types";
 import type {
   ReviewGrade,
   ReviewResultDto,
@@ -45,6 +46,10 @@ export function StudySession({ deckId }: StudySessionProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [stats, setStats] = useState<SessionStats>(initialStats);
+  const [currentStreak, setCurrentStreak] = useState<number>(0);
+  const [newlyUnlockedAchievements, setNewlyUnlockedAchievements] = useState<
+    AchievementUnlockDto[]
+  >([]);
 
   const currentCard = cards[currentIndex] ?? null;
   const isCompleted = cards.length > 0 && currentIndex >= cards.length;
@@ -64,6 +69,8 @@ export function StudySession({ deckId }: StudySessionProps) {
       setCurrentIndex(0);
       setShowAnswer(false);
       setStats(initialStats);
+      setCurrentStreak(0);
+      setNewlyUnlockedAchievements([]);
 
       const response = await fetch(`/api/decks/${deckId}/study`, {
         method: "GET",
@@ -133,6 +140,16 @@ export function StudySession({ deckId }: StudySessionProps) {
       normal: prev.normal + (grade === "normal" ? 1 : 0),
       easy: prev.easy + (grade === "easy" ? 1 : 0),
     }));
+    setCurrentStreak(body.data.currentStreak);
+    setNewlyUnlockedAchievements((prev) => {
+      const map = new Map(prev.map((achievement) => [achievement.code, achievement]));
+
+      for (const achievement of body.data.newlyUnlockedAchievements) {
+        map.set(achievement.code, achievement);
+      }
+
+      return Array.from(map.values());
+    });
 
     setCurrentIndex((prev) => prev + 1);
     setShowAnswer(false);
@@ -183,6 +200,28 @@ export function StudySession({ deckId }: StudySessionProps) {
           <li>Нормально: {stats.normal}</li>
           <li>Легко: {stats.easy}</li>
         </ul>
+
+        <div className="rounded-xl border border-border bg-white p-4">
+          <p className="text-sm font-medium text-foreground">
+            Текущий streak: {currentStreak} {currentStreak === 1 ? "день" : "дней"}
+          </p>
+          {newlyUnlockedAchievements.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs uppercase tracking-wide text-muted">
+                Новые достижения
+              </p>
+              <ul className="space-y-1 text-sm text-foreground">
+                {newlyUnlockedAchievements.map((achievement) => (
+                  <li key={achievement.code}>
+                    {achievement.title} ({achievement.code})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="mt-2 text-sm text-muted">Новых достижений в этой сессии пока нет.</p>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <Link href={`/decks/${deckId}`} className={buttonClassName({ variant: "secondary" })}>

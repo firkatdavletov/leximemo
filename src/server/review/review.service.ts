@@ -7,6 +7,7 @@ import type {
 } from "@/entities/review/model/types";
 import { calculateNextReview } from "@/features/review/model/spaced-repetition";
 import { prisma } from "@/lib/prisma";
+import { registerReviewProgress } from "@/server/progress/progress.service";
 
 function mapPrismaGradeToDto(grade: PrismaReviewGrade): ReviewGrade {
   if (grade === "HARD") {
@@ -177,12 +178,20 @@ export async function submitReviewForCard(
       },
     });
 
+    const progress = await registerReviewProgress(tx, {
+      userId,
+      deckId,
+      reviewedAt: now,
+    });
+
     return {
       cardId: historyEntry.cardId,
       grade: mapPrismaGradeToDto(historyEntry.grade),
       previousIntervalDays: historyEntry.previousIntervalDays ?? 0,
       newIntervalDays: historyEntry.newIntervalDays,
       nextReviewAt: nextState.nextReviewAt.toISOString(),
+      currentStreak: progress.currentStreak,
+      newlyUnlockedAchievements: progress.newlyUnlockedAchievements,
     } satisfies ReviewResultDto;
   });
 

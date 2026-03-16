@@ -1,3 +1,5 @@
+import type { AchievementUnlockDto } from "@/entities/achievement/model/types";
+
 export type ReviewGrade = "hard" | "normal" | "easy";
 
 export type StudyCardDto = {
@@ -22,4 +24,6 @@ export type ReviewResultDto = {
   previousIntervalDays: number;
   newIntervalDays: number;
   nextReviewAt: string;
+  currentStreak: number;
+  newlyUnlockedAchievements: AchievementUnlockDto[];
 };

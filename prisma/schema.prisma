@@ -15,49 +15,51 @@ enum ReviewGrade {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  passwordHash String
-  name         String?
-  decks        Deck[]
-  reviewHistory ReviewHistory[]
-  achievements Achievement[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                   String               @id @default(cuid())
+  email                String               @unique
+  passwordHash         String
+  name                 String?
+  decks                Deck[]
+  reviewHistory        ReviewHistory[]
+  achievements         Achievement[]
+  dailyStudyActivities DailyStudyActivity[]
+  stats                UserStats?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 }
 
 model Deck {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cards       Card[]
+  id            String          @id @default(cuid())
+  title         String
+  description   String?
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards         Card[]
   reviewHistory ReviewHistory[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@index([userId])
 }
 
 model Card {
-  id            String          @id @default(cuid())
-  word          String
-  translation   String
-  example       String?
-  imageUrl      String?
-  repetitionsCount Int          @default(0)
-  intervalDays  Int             @default(0)
-  easeFactor    Float           @default(2.5)
-  lastReviewedAt DateTime?
-  nextReviewAt  DateTime?
-  lastGrade     ReviewGrade?
-  mistakesCount Int             @default(0)
-  deckId        String
-  deck          Deck            @relation(fields: [deckId], references: [id], onDelete: Cascade)
-  reviewHistory ReviewHistory[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  id               String          @id @default(cuid())
+  word             String
+  translation      String
+  example          String?
+  imageUrl         String?
+  repetitionsCount Int             @default(0)
+  intervalDays     Int             @default(0)
+  easeFactor       Float           @default(2.5)
+  lastReviewedAt   DateTime?
+  nextReviewAt     DateTime?
+  lastGrade        ReviewGrade?
+  mistakesCount    Int             @default(0)
+  deckId           String
+  deck             Deck            @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  reviewHistory    ReviewHistory[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@index([deckId])
   @@index([nextReviewAt])
@@ -93,4 +95,30 @@ model Achievement {
 
   @@unique([userId, code])
   @@index([userId])
+}
+
+model DailyStudyActivity {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityDate  DateTime
+  reviewsCount  Int      @default(0)
+  sessionsCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, activityDate])
+  @@index([userId, activityDate])
+}
+
+model UserStats {
+  userId             String    @id
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak      Int       @default(0)
+  longestStreak      Int       @default(0)
+  totalReviewedCards Int       @default(0)
+  totalStudySessions Int       @default(0)
+  lastStudyDate      DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AICardGenerator } from "@/features/ai/ai-card-generator";
 import { CardDeleteButton } from "@/features/cards/card-delete-button";
 import { DeckDeleteButton } from "@/features/decks/deck-delete-button";
 import { getCurrentUserId } from "@/server/auth/session";
@@ -63,6 +64,8 @@ export default async function DeckDetailsPage({ params }: DeckDetailsPageProps) 
         </Link>
         <DeckDeleteButton deckId={deck.id} />
       </section>
+
+      <AICardGenerator deckId={deck.id} />
 
       {cards.length === 0 ? (
         <EmptyState
