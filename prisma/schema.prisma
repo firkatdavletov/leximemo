@@ -46,6 +46,7 @@ model Card {
   id               String          @id @default(cuid())
   word             String
   translation      String
+  languageCode     String?
   example          String?
   imageUrl         String?
   repetitionsCount Int             @default(0)

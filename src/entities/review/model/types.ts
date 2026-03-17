@@ -6,6 +6,7 @@ export type StudyCardDto = {
   id: string;
   word: string;
   translation: string;
+  languageCode: string | null;
   example: string | null;
   imageUrl: string | null;
   repetitionsCount: number;

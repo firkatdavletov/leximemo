@@ -5,6 +5,7 @@ export type CardDto = {
   deckId: string;
   word: string;
   translation: string;
+  languageCode: string | null;
   example: string | null;
   imageUrl: string | null;
   repetitionsCount: number;
@@ -29,6 +30,7 @@ export type CardItemDto = {
 export type CreateCardRequestDto = {
   word: string;
   translation: string;
+  languageCode?: string;
   example?: string;
   imageUrl?: string;
 };

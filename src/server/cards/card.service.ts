@@ -11,6 +11,7 @@ type CardRecord = {
   deckId: string;
   word: string;
   translation: string;
+  languageCode: string | null;
   example: string | null;
   imageUrl: string | null;
   repetitionsCount: number;
@@ -46,6 +47,7 @@ function mapCardToDto(card: CardRecord): CardDto {
     deckId: card.deckId,
     word: card.word,
     translation: card.translation,
+    languageCode: card.languageCode,
     example: card.example,
     imageUrl: card.imageUrl,
     repetitionsCount: card.repetitionsCount,
@@ -114,6 +116,7 @@ export async function createCardInDeck(
       deckId,
       word: input.word.trim(),
       translation: input.translation.trim(),
+      languageCode: input.languageCode?.trim() || null,
       example: input.example?.trim() || null,
       imageUrl: input.imageUrl?.trim() || null,
     },
@@ -201,6 +204,7 @@ export async function updateUserCard(
     data: {
       word: input.word.trim(),
       translation: input.translation.trim(),
+      languageCode: input.languageCode?.trim() || null,
       example: input.example?.trim() || null,
       imageUrl: input.imageUrl?.trim() || null,
     },

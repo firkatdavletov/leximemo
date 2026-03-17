@@ -12,6 +12,7 @@ import type {
 } from "@/entities/review/model/types";
 import { buttonClassName } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
+import { SpeakButton } from "@/shared/ui/speak-button";
 import type { ApiError, ApiSuccess } from "@/shared/types/api";
 
 type StudySessionProps = {
@@ -249,9 +250,15 @@ export function StudySession({ deckId }: StudySessionProps) {
       </div>
 
       <article className="space-y-4 rounded-2xl border border-border bg-white p-5">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-muted">Слово</p>
-          <h2 className="mt-2 text-2xl font-semibold text-foreground">{currentCard.word}</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-muted">Слово</p>
+            <h2 className="mt-2 text-2xl font-semibold text-foreground">{currentCard.word}</h2>
+          </div>
+          <SpeakButton
+            text={currentCard.word}
+            lang={currentCard.languageCode ?? "en-US"}
+          />
         </div>
 
         {showAnswer ? (

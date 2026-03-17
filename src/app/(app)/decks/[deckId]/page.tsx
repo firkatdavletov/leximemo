@@ -11,6 +11,7 @@ import { buttonClassName } from "@/shared/ui/button";
 import { Container } from "@/shared/ui/container";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { PageTitle } from "@/shared/ui/page-title";
+import { SpeakButton } from "@/shared/ui/speak-button";
 
 type DeckDetailsPageProps = {
   params: Promise<{
@@ -83,9 +84,18 @@ export default async function DeckDetailsPage({ params }: DeckDetailsPageProps) 
             <li key={card.id} className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-2">
-                  <p className="text-lg font-semibold text-foreground">{card.word}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-lg font-semibold text-foreground">{card.word}</p>
+                    <SpeakButton
+                      text={card.word}
+                      lang={card.languageCode ?? "en-US"}
+                    />
+                  </div>
                   <p className="text-sm text-muted">{card.translation}</p>
                   {card.example ? <p className="text-sm text-muted">Пример: {card.example}</p> : null}
+                  <p className="text-xs text-muted">
+                    Язык озвучки: {card.languageCode ?? "en-US"}
+                  </p>
                   <p className="text-xs text-muted">
                     Интервал: {card.intervalDays || 0} дн., повторений: {card.repetitionsCount}
                   </p>

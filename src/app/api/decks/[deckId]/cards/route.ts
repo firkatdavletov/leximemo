@@ -97,6 +97,7 @@ export async function POST(request: Request, { params }: CardsRouteContext) {
   const payload: CreateCardRequestDto = {
     word: parsed.data.word,
     translation: parsed.data.translation,
+    languageCode: parsed.data.languageCode,
     example: parsed.data.example,
     imageUrl: parsed.data.imageUrl,
   };

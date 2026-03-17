@@ -98,6 +98,7 @@ export async function PUT(request: Request, { params }: CardRouteContext) {
   const payload: UpdateCardRequestDto = {
     word: parsed.data.word,
     translation: parsed.data.translation,
+    languageCode: parsed.data.languageCode,
     example: parsed.data.example,
     imageUrl: parsed.data.imageUrl,
   };

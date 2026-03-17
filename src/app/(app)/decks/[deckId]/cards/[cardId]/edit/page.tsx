@@ -48,6 +48,7 @@ export default async function EditCardPage({ params }: EditCardPageProps) {
           cardId={card.id}
           initialWord={card.word}
           initialTranslation={card.translation}
+          initialLanguageCode={card.languageCode}
           initialExample={card.example}
           initialImageUrl={card.imageUrl}
         />

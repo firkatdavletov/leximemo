@@ -14,6 +14,7 @@ type CardFormProps = {
   cardId?: string;
   initialWord?: string;
   initialTranslation?: string;
+  initialLanguageCode?: string | null;
   initialExample?: string | null;
   initialImageUrl?: string | null;
 };
@@ -21,6 +22,7 @@ type CardFormProps = {
 type CardFormState = {
   word: string;
   translation: string;
+  languageCode: string;
   example: string;
   imageUrl: string;
 };
@@ -31,12 +33,14 @@ export function CardForm({
   cardId,
   initialWord = "",
   initialTranslation = "",
+  initialLanguageCode = "",
   initialExample = "",
   initialImageUrl = "",
 }: CardFormProps) {
   const [state, setState] = useState<CardFormState>({
     word: initialWord,
     translation: initialTranslation,
+    languageCode: initialLanguageCode ?? "",
     example: initialExample ?? "",
     imageUrl: initialImageUrl ?? "",
   });
@@ -69,6 +73,7 @@ export function CardForm({
       body: JSON.stringify({
         word: state.word,
         translation: state.translation,
+        languageCode: state.languageCode,
         example: state.example,
         imageUrl: state.imageUrl,
       }),
@@ -121,6 +126,23 @@ export function CardForm({
           className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
           required
           maxLength={300}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor="card-language-code" className="text-sm font-medium text-foreground">
+          Language code (опционально)
+        </label>
+        <input
+          id="card-language-code"
+          type="text"
+          value={state.languageCode}
+          onChange={(event) =>
+            setState((prev) => ({ ...prev, languageCode: event.target.value }))
+          }
+          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          maxLength={35}
+          placeholder="en-US"
         />
       </div>
 
