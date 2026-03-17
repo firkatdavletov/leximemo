@@ -95,7 +95,7 @@
 
 - endpoint: `POST https://kong-proxy.yc.amvera.ru/api/v1/models/gpt`
 - auth: заголовок `X-Auth-Token: Bearer <OPENAI_API_KEY>`
-- structured output: `response_format.type = json_schema`
+- structured output: формат JSON задается в тексте prompt
 - ключ используется только на сервере (`OPENAI_API_KEY`), на клиент не уходит
 
 Ожидаемая структура:

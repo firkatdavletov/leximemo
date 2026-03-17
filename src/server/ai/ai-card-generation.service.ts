@@ -17,6 +17,7 @@ type AIResponse = {
   choices?: Array<{
     message?: {
       text?: string;
+      content?: string | Array<{ type?: string; text?: string }>;
     };
   }>;
 };
@@ -27,12 +28,31 @@ function getTokenHeaderValue(token: string): string {
 
 function getResponseText(response: AIResponse): string | null {
   const firstChoice = response.choices?.[0];
+  const message = firstChoice?.message;
 
-  if (!firstChoice || !firstChoice.message?.text) {
+  if (!message) {
     return null;
   }
 
-  return firstChoice.message.text;
+  if (typeof message.text === "string" && message.text.trim()) {
+    return message.text;
+  }
+
+  if (typeof message.content === "string" && message.content.trim()) {
+    return message.content;
+  }
+
+  if (Array.isArray(message.content)) {
+    const textParts = message.content
+      .map((part) => (typeof part.text === "string" ? part.text : ""))
+      .filter((value) => value.trim().length > 0);
+
+    if (textParts.length > 0) {
+      return textParts.join("\n");
+    }
+  }
+
+  return null;
 }
 
 function extractJsonBlock(value: string): string {
@@ -57,44 +77,14 @@ function buildGenerationPrompt(prompt: string, cardsCount: number): string {
     "Сгенерируй карточки для изучения слов.",
     `Количество карточек: ${cardsCount}.`,
     "Язык ответа: русский.",
-    "Для каждой карточки верни word, translation, optional example, optional imagePrompt.",
-    "Не добавляй markdown и пояснения. Только JSON.",
+    "Верни только JSON-объект без markdown и пояснений.",
+    "Формат ответа (строго):",
+    '{"cards":[{"word":"string","translation":"string","example":"string | null","imagePrompt":"string | null"}]}',
+    `cards должен содержать ровно ${cardsCount} элементов.`,
+    "word и translation обязательны и не должны быть пустыми.",
+    "example и imagePrompt: если значения нет, верни null.",
     `Prompt пользователя: ${prompt}`,
   ].join("\n");
-}
-
-function buildJsonSchema(cardsCount: number) {
-  return {
-    type: "object",
-    additionalProperties: false,
-    required: ["cards"],
-    properties: {
-      cards: {
-        type: "array",
-        minItems: cardsCount,
-        maxItems: cardsCount,
-        items: {
-          type: "object",
-          additionalProperties: false,
-          required: ["word", "translation"],
-          properties: {
-            word: {
-              type: "string",
-            },
-            translation: {
-              type: "string",
-            },
-            example: {
-              type: ["string", "null"],
-            },
-            imagePrompt: {
-              type: ["string", "null"],
-            },
-          },
-        },
-      },
-    },
-  };
 }
 
 function normalizeCards(cards: Array<{ word: string; translation: string; example?: string | null; imagePrompt?: string | null }>): AIGeneratedCardDto[] {
@@ -131,24 +121,36 @@ export async function generateCardsPreviewByPrompt(input: {
           text: buildGenerationPrompt(input.prompt, input.cardsCount),
         },
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "generated_cards",
-          strict: true,
-          schema: buildJsonSchema(input.cardsCount),
-        },
-      },
     }),
   }).catch(() => {
     throw new AIGenerationError("Не удалось выполнить запрос к AI сервису.", 502);
   });
 
+  const rawResponseText = await response.text().catch(() => "");
+
   if (!response.ok) {
-    throw new AIGenerationError("AI сервис временно недоступен. Попробуйте позже.", 502);
+    console.error("[AI upstream error]", {
+      status: response.status,
+      statusText: response.statusText,
+      body: rawResponseText.slice(0, 500),
+    });
+    throw new AIGenerationError(
+      `AI сервис вернул ошибку ${response.status}. Проверьте OPENAI_API_KEY и формат запроса.`,
+      502,
+    );
   }
 
-  const responseBody = (await response.json().catch(() => null)) as AIResponse | null;
+  const responseBody = ((): AIResponse | null => {
+    if (!rawResponseText) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(rawResponseText) as AIResponse;
+    } catch {
+      return null;
+    }
+  })();
 
   if (!responseBody) {
     throw new AIGenerationError("AI сервис вернул пустой ответ.", 502);
