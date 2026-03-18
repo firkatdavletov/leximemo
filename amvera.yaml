@@ -5,8 +5,8 @@ meta:
     version: 20
 
 build:
-  additionalCommands: npm run prisma:generate && npm run prisma:migrate:deploy && npm run build
+  additionalCommands: npm run prisma:generate && npm run build
 
 run:
-  command: npm run start
+  command: npm run prisma:migrate:deploy && npm run start
   containerPort: 3000
