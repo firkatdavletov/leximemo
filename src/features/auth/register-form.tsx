@@ -78,7 +78,7 @@ export function RegisterForm() {
       return;
     }
 
-    router.push(signInResponse.url ?? ROUTES.decks);
+    router.push(ROUTES.decks);
     router.refresh();
   }
 

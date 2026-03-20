@@ -37,12 +37,13 @@ export function LoginForm() {
     setIsSubmitting(true);
 
     const callbackUrl = searchParams.get("next") || ROUTES.decks;
+    const callbackPath = callbackUrl.startsWith("/") ? callbackUrl : ROUTES.decks;
 
     const result = await signIn("credentials", {
       email: formState.email,
       password: formState.password,
       redirect: false,
-      callbackUrl,
+      callbackUrl: callbackPath,
     });
 
     setIsSubmitting(false);
@@ -52,7 +53,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push(result.url ?? callbackUrl);
+    router.push(callbackPath);
     router.refresh();
   }
 
