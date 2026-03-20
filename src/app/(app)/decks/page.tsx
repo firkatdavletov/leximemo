@@ -8,6 +8,7 @@ import { buttonClassName } from "@/shared/ui/button";
 import { Container } from "@/shared/ui/container";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { PageTitle } from "@/shared/ui/page-title";
+import { QueryStatusMessage } from "@/shared/ui/query-status-message";
 
 const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "medium",
@@ -29,13 +30,15 @@ export default async function DecksPage() {
     <Container className="space-y-6">
       <PageTitle
         title="Мои колоды"
-        description="Управляйте колодами и карточками только в рамках своего аккаунта."
+        description="Управляйте колодами, запускайте обучение и отслеживайте прогресс в рамках своего аккаунта."
         action={
           <Link href="/decks/new" className={buttonClassName()}>
-            Новая колода
+            Создать колоду
           </Link>
         }
       />
+
+      <QueryStatusMessage />
 
       <ProgressOverview progress={progress} />
 
@@ -51,6 +54,7 @@ export default async function DecksPage() {
             <li key={deck.id}>
               <Link
                 href={`/decks/${deck.id}`}
+                aria-label={`Открыть колоду ${deck.title}`}
                 className="block rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:border-accent/40"
               >
                 <h2 className="text-lg font-semibold text-foreground">{deck.title}</h2>

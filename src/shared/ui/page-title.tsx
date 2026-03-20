@@ -22,11 +22,11 @@ export function PageTitle({
         className,
       )}
     >
-      <div className="space-y-2">
+      <div className="max-w-3xl space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           {title}
         </h1>
-        {description ? <p className="text-sm text-muted">{description}</p> : null}
+        {description ? <p className="text-sm leading-6 text-muted">{description}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>

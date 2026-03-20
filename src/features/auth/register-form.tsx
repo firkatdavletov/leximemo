@@ -7,6 +7,8 @@ import { FormEvent, useState } from "react";
 
 import { ROUTES } from "@/shared/config/app";
 import { buttonClassName } from "@/shared/ui/button";
+import { FeedbackMessage } from "@/shared/ui/feedback-message";
+import { helperTextClassName, inputClassName } from "@/shared/ui/form-fields";
 import type { ApiError } from "@/shared/types/api";
 
 type RegisterFormState = {
@@ -43,47 +45,50 @@ export function RegisterForm() {
     setError(null);
     setIsSubmitting(true);
 
-    const registerResponse = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: formState.email,
+    try {
+      const registerResponse = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formState.email.trim(),
+          password: formState.password,
+          name: formState.name,
+        }),
+      });
+
+      if (!registerResponse.ok) {
+        const errorBody = (await registerResponse.json().catch(() => null)) as
+          | ApiError
+          | null;
+        setError(errorBody?.error ?? "Не удалось зарегистрироваться.");
+        return;
+      }
+
+      const signInResponse = await signIn("credentials", {
+        email: formState.email.trim(),
         password: formState.password,
-        name: formState.name,
-      }),
-    });
+        redirect: false,
+        callbackUrl: ROUTES.decks,
+      });
 
-    if (!registerResponse.ok) {
-      const errorBody = (await registerResponse.json().catch(() => null)) as
-        | ApiError
-        | null;
-      setError(errorBody?.error ?? "Не удалось зарегистрироваться.");
+      if (!signInResponse || signInResponse.error) {
+        setError("Регистрация прошла, но автоматически войти не удалось.");
+        return;
+      }
+
+      router.push(ROUTES.decks);
+      router.refresh();
+    } catch {
+      setError("Не удалось завершить регистрацию. Проверьте соединение и попробуйте снова.");
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    const signInResponse = await signIn("credentials", {
-      email: formState.email,
-      password: formState.password,
-      redirect: false,
-      callbackUrl: ROUTES.decks,
-    });
-
-    setIsSubmitting(false);
-
-    if (!signInResponse || signInResponse.error) {
-      setError("Регистрация прошла, но автоматически войти не удалось.");
-      return;
-    }
-
-    router.push(ROUTES.decks);
-    router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isSubmitting}>
       <div className="space-y-1.5">
         <label htmlFor="register-email" className="text-sm font-medium text-foreground">
           Email
@@ -92,11 +97,15 @@ export function RegisterForm() {
           id="register-email"
           type="email"
           autoComplete="email"
+          autoFocus
           value={formState.email}
           onChange={(event) =>
             setFormState((prev) => ({ ...prev, email: event.target.value }))
           }
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
+          placeholder="you@example.com"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "register-form-error" : "register-password-hint"}
           required
         />
       </div>
@@ -113,10 +122,16 @@ export function RegisterForm() {
           onChange={(event) =>
             setFormState((prev) => ({ ...prev, password: event.target.value }))
           }
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
+          placeholder="Минимум 6 символов"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "register-form-error" : "register-password-hint"}
           required
           minLength={6}
         />
+        <p id="register-password-hint" className={helperTextClassName}>
+          Используйте минимум 6 символов.
+        </p>
       </div>
 
       <div className="space-y-1.5">
@@ -131,14 +146,15 @@ export function RegisterForm() {
           onChange={(event) =>
             setFormState((prev) => ({ ...prev, name: event.target.value }))
           }
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
+          placeholder="Как к вам обращаться"
         />
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+        <FeedbackMessage variant="error" className="py-2" title="Ошибка регистрации">
+          <span id="register-form-error">{error}</span>
+        </FeedbackMessage>
       ) : null}
 
       <button

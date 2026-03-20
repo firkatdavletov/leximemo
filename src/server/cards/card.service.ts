@@ -50,6 +50,7 @@ function mapCardToDto(card: CardRecord): CardDto {
     languageCode: card.languageCode,
     example: card.example,
     imageUrl: card.imageUrl,
+    isDue: !card.nextReviewAt || card.nextReviewAt <= new Date(),
     repetitionsCount: card.repetitionsCount,
     intervalDays: card.intervalDays,
     easeFactor: card.easeFactor,

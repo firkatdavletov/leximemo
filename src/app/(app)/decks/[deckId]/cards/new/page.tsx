@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CardForm } from "@/features/cards/card-form";
 import { getCurrentUserId } from "@/server/auth/session";
 import { getUserDeckById } from "@/server/decks/deck.service";
+import { BackLink } from "@/shared/ui/back-link";
 import { Container } from "@/shared/ui/container";
 import { PageTitle } from "@/shared/ui/page-title";
 
@@ -28,6 +29,8 @@ export default async function NewCardPage({ params }: NewCardPageProps) {
 
   return (
     <Container className="max-w-2xl space-y-6">
+      <BackLink href={`/decks/${deck.id}`} label="К колоде" />
+
       <PageTitle
         title={`Новая карточка: ${deck.title}`}
         description="Добавьте слово, перевод и при необходимости пример."

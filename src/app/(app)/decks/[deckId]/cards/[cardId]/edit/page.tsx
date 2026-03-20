@@ -4,6 +4,7 @@ import { CardForm } from "@/features/cards/card-form";
 import { getCurrentUserId } from "@/server/auth/session";
 import { getUserCardById } from "@/server/cards/card.service";
 import { getUserDeckById } from "@/server/decks/deck.service";
+import { BackLink } from "@/shared/ui/back-link";
 import { Container } from "@/shared/ui/container";
 import { PageTitle } from "@/shared/ui/page-title";
 
@@ -36,6 +37,8 @@ export default async function EditCardPage({ params }: EditCardPageProps) {
 
   return (
     <Container className="max-w-2xl space-y-6">
+      <BackLink href={`/decks/${deck.id}`} label="К колоде" />
+
       <PageTitle
         title="Редактирование карточки"
         description={`Колода: ${deck.title}`}

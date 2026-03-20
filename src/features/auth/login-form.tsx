@@ -7,6 +7,8 @@ import { FormEvent, useState } from "react";
 
 import { ROUTES } from "@/shared/config/app";
 import { buttonClassName } from "@/shared/ui/button";
+import { FeedbackMessage } from "@/shared/ui/feedback-message";
+import { inputClassName } from "@/shared/ui/form-fields";
 
 type LoginFormState = {
   email: string;
@@ -36,29 +38,33 @@ export function LoginForm() {
     setError(null);
     setIsSubmitting(true);
 
-    const callbackUrl = searchParams.get("next") || ROUTES.decks;
-    const callbackPath = callbackUrl.startsWith("/") ? callbackUrl : ROUTES.decks;
+    try {
+      const callbackUrl = searchParams.get("next") || ROUTES.decks;
+      const callbackPath = callbackUrl.startsWith("/") ? callbackUrl : ROUTES.decks;
 
-    const result = await signIn("credentials", {
-      email: formState.email,
-      password: formState.password,
-      redirect: false,
-      callbackUrl: callbackPath,
-    });
+      const result = await signIn("credentials", {
+        email: formState.email.trim(),
+        password: formState.password,
+        redirect: false,
+        callbackUrl: callbackPath,
+      });
 
-    setIsSubmitting(false);
+      if (!result || result.error) {
+        setError("Неверный email или пароль.");
+        return;
+      }
 
-    if (!result || result.error) {
-      setError("Неверный email или пароль.");
-      return;
+      router.push(callbackPath);
+      router.refresh();
+    } catch {
+      setError("Не удалось выполнить вход. Проверьте соединение и попробуйте снова.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    router.push(callbackPath);
-    router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isSubmitting}>
       <div className="space-y-1.5">
         <label htmlFor="email" className="text-sm font-medium text-foreground">
           Email
@@ -67,11 +73,15 @@ export function LoginForm() {
           id="email"
           type="email"
           autoComplete="email"
+          autoFocus
           value={formState.email}
           onChange={(event) =>
             setFormState((prev) => ({ ...prev, email: event.target.value }))
           }
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
+          placeholder="you@example.com"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "login-form-error" : undefined}
           required
         />
       </div>
@@ -88,15 +98,18 @@ export function LoginForm() {
           onChange={(event) =>
             setFormState((prev) => ({ ...prev, password: event.target.value }))
           }
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
+          placeholder="Введите пароль"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "login-form-error" : undefined}
           required
         />
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+        <FeedbackMessage variant="error" className="py-2" title="Не удалось войти">
+          <span id="login-form-error">{error}</span>
+        </FeedbackMessage>
       ) : null}
 
       <button

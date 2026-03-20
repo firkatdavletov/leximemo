@@ -9,6 +9,20 @@ import { calculateNextReview } from "@/features/review/model/spaced-repetition";
 import { prisma } from "@/lib/prisma";
 import { registerReviewProgress } from "@/server/progress/progress.service";
 
+export class ReviewSubmissionError extends Error {
+  public readonly code: "not_found" | "not_due";
+
+  constructor(code: "not_found" | "not_due") {
+    super(
+      code === "not_due"
+        ? "Карточка уже обновлена в другой сессии. Обновите список карточек."
+        : "Карточка или колода не найдена.",
+    );
+    this.name = "ReviewSubmissionError";
+    this.code = code;
+  }
+}
+
 function mapPrismaGradeToDto(grade: PrismaReviewGrade): ReviewGrade {
   if (grade === "HARD") {
     return "hard";
@@ -109,10 +123,10 @@ export async function submitReviewForCard(
   deckId: string,
   cardId: string,
   grade: ReviewGrade,
-): Promise<ReviewResultDto | null> {
+): Promise<ReviewResultDto> {
   const now = new Date();
 
-  const result = await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const card = await tx.card.findFirst({
       where: {
         id: cardId,
@@ -127,11 +141,16 @@ export async function submitReviewForCard(
         intervalDays: true,
         easeFactor: true,
         mistakesCount: true,
+        nextReviewAt: true,
       },
     });
 
     if (!card) {
-      return null;
+      throw new ReviewSubmissionError("not_found");
+    }
+
+    if (card.nextReviewAt && card.nextReviewAt > now) {
+      throw new ReviewSubmissionError("not_due");
     }
 
     const nextState = calculateNextReview(
@@ -196,6 +215,4 @@ export async function submitReviewForCard(
       newlyUnlockedAchievements: progress.newlyUnlockedAchievements,
     } satisfies ReviewResultDto;
   });
-
-  return result;
 }

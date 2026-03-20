@@ -9,6 +9,12 @@ import type {
   AISaveGeneratedResponseDto,
 } from "@/entities/ai/model/types";
 import { buttonClassName } from "@/shared/ui/button";
+import { FeedbackMessage } from "@/shared/ui/feedback-message";
+import {
+  helperTextClassName,
+  inputClassName,
+  textareaClassName,
+} from "@/shared/ui/form-fields";
 import type { ApiError, ApiSuccess } from "@/shared/types/api";
 
 type AICardGeneratorProps = {
@@ -40,31 +46,36 @@ export function AICardGenerator({ deckId }: AICardGeneratorProps) {
     setSavedCount(null);
     setIsGenerating(true);
 
-    const response = await fetch(`/api/decks/${deckId}/ai/preview`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt,
-        cardsCount,
-      }),
-    });
+    try {
+      const response = await fetch(`/api/decks/${deckId}/ai/preview`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt,
+          cardsCount,
+        }),
+      });
 
-    const body = (await response.json().catch(() => null)) as
-      | ApiSuccess<AIPreviewResponseDto>
-      | ApiError
-      | null;
+      const body = (await response.json().catch(() => null)) as
+        | ApiSuccess<AIPreviewResponseDto>
+        | ApiError
+        | null;
 
-    setIsGenerating(false);
+      if (!response.ok || !body || !body.ok) {
+        setPreviewCards([]);
+        setError(body && !body.ok ? body.error : "Не удалось получить превью карточек.");
+        return;
+      }
 
-    if (!response.ok || !body || !body.ok) {
+      setPreviewCards(body.data.cards);
+    } catch {
       setPreviewCards([]);
-      setError(body && !body.ok ? body.error : "Не удалось получить превью карточек.");
-      return;
+      setError("Не удалось получить превью карточек. Проверьте соединение и попробуйте снова.");
+    } finally {
+      setIsGenerating(false);
     }
-
-    setPreviewCards(body.data.cards);
   }
 
   async function handleSave() {
@@ -75,66 +86,78 @@ export function AICardGenerator({ deckId }: AICardGeneratorProps) {
     setError(null);
     setIsSaving(true);
 
-    const response = await fetch(`/api/decks/${deckId}/ai/save`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        cards: previewCards,
-      }),
-    });
+    try {
+      const response = await fetch(`/api/decks/${deckId}/ai/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cards: previewCards,
+        }),
+      });
 
-    const body = (await response.json().catch(() => null)) as
-      | ApiSuccess<AISaveGeneratedResponseDto>
-      | ApiError
-      | null;
+      const body = (await response.json().catch(() => null)) as
+        | ApiSuccess<AISaveGeneratedResponseDto>
+        | ApiError
+        | null;
 
-    setIsSaving(false);
+      if (!response.ok || !body || !body.ok) {
+        setError(
+          body && !body.ok ? body.error : "Не удалось сохранить сгенерированные карточки.",
+        );
+        return;
+      }
 
-    if (!response.ok || !body || !body.ok) {
-      setError(body && !body.ok ? body.error : "Не удалось сохранить сгенерированные карточки.");
-      return;
+      setSavedCount(body.data.savedCount);
+      setPreviewCards([]);
+      setPrompt("");
+      setCardsCount(5);
+      router.refresh();
+    } catch {
+      setError("Не удалось сохранить карточки. Проверьте соединение и попробуйте снова.");
+    } finally {
+      setIsSaving(false);
     }
-
-    setSavedCount(body.data.savedCount);
-    setPreviewCards([]);
-    setPrompt("");
-    setCardsCount(5);
-    router.refresh();
   }
 
   return (
     <section className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">AI генерация карточек</h2>
-          <p className="text-xs text-muted">{"Prompt -> preview -> confirm save"}</p>
+          <h2 className="text-sm font-semibold text-foreground">AI-генерация карточек</h2>
+          <p className="text-xs text-muted">Prompt, превью и подтвержденное сохранение.</p>
         </div>
 
         <button
           type="button"
           className={buttonClassName({ variant: isOpen ? "secondary" : "primary", size: "sm" })}
           onClick={() => setIsOpen((prev) => !prev)}
+          aria-expanded={isOpen}
+          aria-controls="ai-generator-panel"
         >
-          {isOpen ? "Скрыть" : "Generate with AI"}
+          {isOpen ? "Скрыть блок" : "Открыть генерацию"}
         </button>
       </div>
 
       {isOpen ? (
-        <div className="mt-4 space-y-4">
+        <div id="ai-generator-panel" className="mt-4 space-y-4" aria-busy={isGenerating || isSaving}>
           <div className="space-y-1.5">
             <label htmlFor="ai-prompt" className="text-sm font-medium text-foreground">
-              Prompt
+              Тема или prompt
             </label>
             <textarea
               id="ai-prompt"
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
-              className="min-h-24 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm outline-none ring-accent/40 transition focus:ring-2"
+              className={`${textareaClassName} min-h-24`}
               placeholder="Например: 15 базовых английских слов про путешествия для A1"
               maxLength={4000}
+              aria-describedby="ai-prompt-hint"
             />
+            <p id="ai-prompt-hint" className={helperTextClassName}>
+              Чем конкретнее тема и уровень, тем полезнее будут карточки для демо.
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -147,8 +170,10 @@ export function AICardGenerator({ deckId }: AICardGeneratorProps) {
               min={1}
               max={20}
               value={cardsCount}
-              onChange={(event) => setCardsCount(Number(event.target.value) || 1)}
-              className="h-11 w-full max-w-40 rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+              onChange={(event) =>
+                setCardsCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))
+              }
+              className={`${inputClassName} max-w-40`}
             />
           </div>
 
@@ -175,28 +200,37 @@ export function AICardGenerator({ deckId }: AICardGeneratorProps) {
           </div>
 
           {error ? (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <FeedbackMessage variant="error" className="py-2" title="AI-ошибка">
               {error}
-            </p>
+            </FeedbackMessage>
           ) : null}
 
           {savedCount !== null ? (
-            <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            <FeedbackMessage variant="success" className="py-2" title="Сохранение завершено">
               Сохранено карточек: {savedCount}
-            </p>
+            </FeedbackMessage>
           ) : null}
 
           {previewCards.length > 0 ? (
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-muted">Превью</p>
-              <ul className="space-y-2">
+              <p className="text-xs uppercase tracking-wide text-muted">
+                Превью карточек: {previewCards.length}
+              </p>
+              <ul className="grid gap-2 md:grid-cols-2">
                 {previewCards.map((card, index) => (
-                  <li key={`${card.word}-${index}`} className="rounded-xl border border-border bg-white p-3">
+                  <li
+                    key={`${card.word}-${index}`}
+                    className="rounded-xl border border-border bg-white p-3"
+                  >
                     <p className="text-sm font-semibold text-foreground">{card.word}</p>
                     <p className="mt-1 text-sm text-muted">{card.translation}</p>
-                    {card.example ? <p className="mt-1 text-xs text-muted">{card.example}</p> : null}
+                    {card.example ? (
+                      <p className="mt-1 text-xs text-muted">{card.example}</p>
+                    ) : null}
                     {card.imagePrompt ? (
-                      <p className="mt-1 text-xs text-muted">imagePrompt: {card.imagePrompt}</p>
+                      <p className="mt-1 text-xs text-muted">
+                        imagePrompt: {card.imagePrompt}
+                      </p>
                     ) : null}
                   </li>
                 ))}

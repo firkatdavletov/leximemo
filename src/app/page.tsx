@@ -7,29 +7,33 @@ import { PageTitle } from "@/shared/ui/page-title";
 
 const highlights = [
   {
-    title: "Авторизация",
-    description: "Регистрация и вход через email/password на базе Auth.js.",
+    title: "Интервальные повторения",
+    description: "Карточки попадают в review-сессию по мере наступления срока повторения.",
   },
   {
-    title: "CRUD колод",
-    description: "Создание, просмотр, редактирование и удаление колод пользователя.",
+    title: "AI генерация карточек",
+    description: "По prompt можно быстро получить превью карточек и сохранить его в колоду.",
   },
   {
-    title: "CRUD карточек",
-    description: "Полный цикл работы с карточками внутри каждой колоды.",
+    title: "Installable PWA",
+    description: "Приложение можно установить на desktop и mobile без сложного offline-first слоя.",
   },
 ];
 
 export default function HomePage() {
   return (
     <Container className="space-y-8">
-      <section className="rounded-2xl border border-border bg-surface p-8 shadow-sm">
+      <section className="rounded-3xl border border-border bg-surface p-8 shadow-sm sm:p-10">
         <PageTitle
           title={`${APP_NAME} — дипломный MVP`}
           description="Приложение для изучения и запоминания слов по карточкам."
         />
 
         <p className="mt-5 max-w-3xl text-sm leading-6 text-muted">{APP_DESCRIPTION}</p>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
+          В проекте уже есть авторизация, колоды, карточки, review flow, streak,
+          achievements, AI generation и браузерная озвучка слов.
+        </p>
 
         <div className="mt-7 flex flex-wrap gap-3">
           <Link href={ROUTES.decks} className={buttonClassName()}>

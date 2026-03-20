@@ -103,6 +103,7 @@ export function SpeakButton({
       onClick={handleSpeak}
       disabled={isDisabled}
       className={buttonClassName({ variant: "secondary", size: "sm", className })}
+      aria-label={`Озвучить слово: ${text.trim()}`}
       title={isSupported ? "Озвучить слово" : "Озвучка не поддерживается в этом браузере"}
     >
       {isSpeaking ? "Озвучивается..." : "Озвучить"}

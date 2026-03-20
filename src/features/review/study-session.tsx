@@ -1,17 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 
 import type { AchievementUnlockDto } from "@/entities/achievement/model/types";
 import type {
   ReviewGrade,
-  ReviewResultDto,
   StudyCardDto,
   StudySessionDto,
 } from "@/entities/review/model/types";
 import { buttonClassName } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
+import { FeedbackMessage } from "@/shared/ui/feedback-message";
 import { SpeakButton } from "@/shared/ui/speak-button";
 import type { ApiError, ApiSuccess } from "@/shared/types/api";
 
@@ -51,17 +51,15 @@ export function StudySession({ deckId }: StudySessionProps) {
   const [newlyUnlockedAchievements, setNewlyUnlockedAchievements] = useState<
     AchievementUnlockDto[]
   >([]);
+  const [reloadToken, setReloadToken] = useState(0);
 
   const currentCard = cards[currentIndex] ?? null;
   const isCompleted = cards.length > 0 && currentIndex >= cards.length;
-
-  const progressLabel = useMemo(() => {
-    if (!currentCard) {
-      return null;
-    }
-
-    return `${currentIndex + 1} / ${cards.length}`;
-  }, [cards.length, currentCard, currentIndex]);
+  const progressLabel = currentCard ? `${currentIndex + 1} / ${cards.length}` : null;
+  const remainingCards = Math.max(cards.length - currentIndex - 1, 0);
+  const handleKeyboardGrade = useEffectEvent((grade: ReviewGrade) => {
+    void handleGradeClick(grade);
+  });
 
   useEffect(() => {
     async function loadSessionCards() {
@@ -73,32 +71,87 @@ export function StudySession({ deckId }: StudySessionProps) {
       setCurrentStreak(0);
       setNewlyUnlockedAchievements([]);
 
-      const response = await fetch(`/api/decks/${deckId}/study`, {
-        method: "GET",
-      });
+      try {
+        const response = await fetch(`/api/decks/${deckId}/study`, {
+          method: "GET",
+        });
 
-      const body = (await response.json().catch(() => null)) as
-        | ApiSuccess<StudySessionDto>
-        | ApiError
-        | null;
+        const body = (await response.json().catch(() => null)) as
+          | ApiSuccess<StudySessionDto>
+          | ApiError
+          | null;
 
-      if (!response.ok || !body || !body.ok) {
-        setError(
-          body && !body.ok
-            ? body.error
-            : "Не удалось загрузить карточки для учебной сессии.",
-        );
+        if (!response.ok || !body || !body.ok) {
+          setError(
+            body && !body.ok
+              ? body.error
+              : "Не удалось загрузить карточки для учебной сессии.",
+          );
+          setCards([]);
+          return;
+        }
+
+        setCards(body.data.cards);
+      } catch {
         setCards([]);
+        setError("Не удалось загрузить учебную сессию. Проверьте соединение и попробуйте снова.");
+      } finally {
         setIsLoading(false);
-        return;
       }
-
-      setCards(body.data.cards);
-      setIsLoading(false);
     }
 
     void loadSessionCards();
-  }, [deckId]);
+  }, [deckId, reloadToken]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName;
+
+      if (tagName === "INPUT" || tagName === "TEXTAREA" || target?.isContentEditable) {
+        return;
+      }
+
+      if (!currentCard || isLoading || isSubmitting || isCompleted) {
+        return;
+      }
+
+      if (!showAnswer && (event.key === " " || event.key === "Enter")) {
+        event.preventDefault();
+        setShowAnswer(true);
+        return;
+      }
+
+      if (!showAnswer) {
+        return;
+      }
+
+      if (event.key === "1") {
+        event.preventDefault();
+        handleKeyboardGrade("hard");
+      }
+
+      if (event.key === "2") {
+        event.preventDefault();
+        handleKeyboardGrade("normal");
+      }
+
+      if (event.key === "3") {
+        event.preventDefault();
+        handleKeyboardGrade("easy");
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [currentCard, isCompleted, isLoading, isSubmitting, showAnswer]);
 
   async function handleGradeClick(grade: ReviewGrade) {
     if (!currentCard || isSubmitting) {
@@ -108,52 +161,63 @@ export function StudySession({ deckId }: StudySessionProps) {
     setError(null);
     setIsSubmitting(true);
 
-    const response = await fetch(`/api/decks/${deckId}/study/review`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        cardId: currentCard.id,
-        grade,
-      }),
-    });
+    try {
+      const response = await fetch(`/api/decks/${deckId}/study/review`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cardId: currentCard.id,
+          grade,
+        }),
+      });
 
-    const body = (await response.json().catch(() => null)) as
-      | ApiSuccess<ReviewResultDto>
-      | ApiError
-      | null;
+      const body = (await response.json().catch(() => null)) as
+        | ApiSuccess<{
+            currentStreak: number;
+            newlyUnlockedAchievements: AchievementUnlockDto[];
+          }>
+        | ApiError
+        | null;
 
-    setIsSubmitting(false);
-
-    if (!response.ok || !body || !body.ok) {
-      setError(
-        body && !body.ok
-          ? body.error
-          : "Не удалось сохранить результат повторения.",
-      );
-      return;
-    }
-
-    setStats((prev) => ({
-      reviewed: prev.reviewed + 1,
-      hard: prev.hard + (grade === "hard" ? 1 : 0),
-      normal: prev.normal + (grade === "normal" ? 1 : 0),
-      easy: prev.easy + (grade === "easy" ? 1 : 0),
-    }));
-    setCurrentStreak(body.data.currentStreak);
-    setNewlyUnlockedAchievements((prev) => {
-      const map = new Map(prev.map((achievement) => [achievement.code, achievement]));
-
-      for (const achievement of body.data.newlyUnlockedAchievements) {
-        map.set(achievement.code, achievement);
+      if (!response.ok || !body || !body.ok) {
+        setError(
+          body && !body.ok
+            ? body.error
+            : "Не удалось сохранить результат повторения.",
+        );
+        return;
       }
 
-      return Array.from(map.values());
-    });
+      setStats((prev) => ({
+        reviewed: prev.reviewed + 1,
+        hard: prev.hard + (grade === "hard" ? 1 : 0),
+        normal: prev.normal + (grade === "normal" ? 1 : 0),
+        easy: prev.easy + (grade === "easy" ? 1 : 0),
+      }));
+      setCurrentStreak(body.data.currentStreak);
+      setNewlyUnlockedAchievements((prev) => {
+        const map = new Map(prev.map((achievement) => [achievement.code, achievement]));
 
-    setCurrentIndex((prev) => prev + 1);
-    setShowAnswer(false);
+        for (const achievement of body.data.newlyUnlockedAchievements) {
+          map.set(achievement.code, achievement);
+        }
+
+        return Array.from(map.values());
+      });
+
+      setCurrentIndex((prev) => prev + 1);
+      setShowAnswer(false);
+    } catch {
+      setError("Не удалось сохранить результат повторения. Проверьте соединение и попробуйте снова.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleReloadSession() {
+    setReloadToken((prev) => prev + 1);
   }
 
   if (isLoading) {
@@ -167,10 +231,20 @@ export function StudySession({ deckId }: StudySessionProps) {
   if (error && cards.length === 0) {
     return (
       <section className="space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-sm">
-        <p className="text-sm text-red-700">{error}</p>
-        <Link href={`/decks/${deckId}`} className={buttonClassName({ variant: "secondary" })}>
-          Вернуться к колоде
-        </Link>
+        <FeedbackMessage variant="error" title="Сессию не удалось открыть">
+          {error}
+        </FeedbackMessage>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={handleReloadSession} className={buttonClassName()}>
+            Повторить попытку
+          </button>
+          <Link
+            href={`/decks/${deckId}`}
+            className={buttonClassName({ variant: "secondary" })}
+          >
+            Вернуться к колоде
+          </Link>
+        </div>
       </section>
     );
   }
@@ -181,9 +255,17 @@ export function StudySession({ deckId }: StudySessionProps) {
         title="Нет карточек для повторения"
         description="Сейчас нет карточек, у которых наступил срок повторения."
         action={
-          <Link href={`/decks/${deckId}`} className={buttonClassName({ variant: "secondary" })}>
-            К колоде
-          </Link>
+          <div className="flex flex-wrap justify-center gap-2">
+            <button type="button" onClick={handleReloadSession} className={buttonClassName()}>
+              Проверить снова
+            </button>
+            <Link
+              href={`/decks/${deckId}`}
+              className={buttonClassName({ variant: "secondary" })}
+            >
+              К колоде
+            </Link>
+          </div>
         }
       />
     );
@@ -195,11 +277,19 @@ export function StudySession({ deckId }: StudySessionProps) {
         <h2 className="text-xl font-semibold text-foreground">Сессия завершена</h2>
         <p className="text-sm text-muted">Карточек для этой сессии больше нет.</p>
 
-        <ul className="grid gap-2 text-sm text-muted sm:grid-cols-2">
-          <li>Пройдено карточек: {stats.reviewed}</li>
-          <li>Сложно: {stats.hard}</li>
-          <li>Нормально: {stats.normal}</li>
-          <li>Легко: {stats.easy}</li>
+        <ul className="grid gap-3 text-sm text-muted sm:grid-cols-2 lg:grid-cols-4">
+          <li className="rounded-xl border border-border bg-white p-3">
+            Пройдено карточек: {stats.reviewed}
+          </li>
+          <li className="rounded-xl border border-border bg-white p-3">
+            Сложно: {stats.hard}
+          </li>
+          <li className="rounded-xl border border-border bg-white p-3">
+            Нормально: {stats.normal}
+          </li>
+          <li className="rounded-xl border border-border bg-white p-3">
+            Легко: {stats.easy}
+          </li>
         </ul>
 
         <div className="rounded-xl border border-border bg-white p-4">
@@ -214,7 +304,7 @@ export function StudySession({ deckId }: StudySessionProps) {
               <ul className="space-y-1 text-sm text-foreground">
                 {newlyUnlockedAchievements.map((achievement) => (
                   <li key={achievement.code}>
-                    {achievement.title} ({achievement.code})
+                    {achievement.title}
                   </li>
                 ))}
               </ul>
@@ -230,7 +320,7 @@ export function StudySession({ deckId }: StudySessionProps) {
           </Link>
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={handleReloadSession}
             className={buttonClassName()}
           >
             Проверить новые due-карточки
@@ -243,10 +333,33 @@ export function StudySession({ deckId }: StudySessionProps) {
   return (
     <section className="space-y-5 rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">Прогресс: {progressLabel}</p>
-        <Link href={`/decks/${deckId}`} className={buttonClassName({ variant: "secondary", size: "sm" })}>
+        <div>
+          <p className="text-sm text-muted">Прогресс: {progressLabel}</p>
+          <p className="text-xs text-muted">
+            Осталось после текущей карточки: {remainingCards}
+          </p>
+        </div>
+        <Link
+          href={`/decks/${deckId}`}
+          className={buttonClassName({ variant: "secondary", size: "sm" })}
+        >
           Выйти из сессии
         </Link>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-border bg-white p-3">
+          <p className="text-xs uppercase tracking-wide text-muted">Всего в сессии</p>
+          <p className="mt-2 text-xl font-semibold text-foreground">{cards.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-white p-3">
+          <p className="text-xs uppercase tracking-wide text-muted">Уже отвечено</p>
+          <p className="mt-2 text-xl font-semibold text-foreground">{stats.reviewed}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-white p-3">
+          <p className="text-xs uppercase tracking-wide text-muted">Текущий streak</p>
+          <p className="mt-2 text-xl font-semibold text-foreground">{currentStreak}</p>
+        </div>
       </div>
 
       <article className="space-y-4 rounded-2xl border border-border bg-white p-5">
@@ -275,6 +388,27 @@ export function StudySession({ deckId }: StudySessionProps) {
               </div>
             ) : null}
 
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted">Текущий интервал</p>
+                <p className="mt-1 text-sm text-foreground">
+                  {currentCard.intervalDays > 0
+                    ? `${currentCard.intervalDays} дн.`
+                    : "Еще не назначен"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted">
+                  Следующее повторение
+                </p>
+                <p className="mt-1 text-sm text-foreground">
+                  {currentCard.nextReviewAt
+                    ? new Date(currentCard.nextReviewAt).toLocaleString("ru-RU")
+                    : "После ответа на карточку"}
+                </p>
+              </div>
+            </div>
+
             {currentCard.imageUrl ? (
               <div>
                 <p className="text-xs uppercase tracking-wide text-muted">Изображение</p>
@@ -297,10 +431,15 @@ export function StudySession({ deckId }: StudySessionProps) {
       </article>
 
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <FeedbackMessage variant="error" className="py-2">
           {error}
-        </p>
+        </FeedbackMessage>
       ) : null}
+
+      <p className="text-xs text-muted">
+        Клавиши: `Space` или `Enter` открыть ответ, `1` сложно, `2` нормально, `3`
+        легко.
+      </p>
 
       {!showAnswer ? (
         <button

@@ -1,121 +1,210 @@
-# LexiMemo MVP (Next.js + Prisma + Auth.js)
+# LexiMemo
 
-Дипломный MVP для изучения слов по карточкам в стиле Anki.
+Дипломный MVP веб-приложения для изучения и запоминания иностранных слов по карточкам в стиле Anki.
 
-## Технологии
+Проект сделан как единый fullstack на Next.js App Router и уже готов для локального запуска, демонстрации и установки как PWA.
 
-- Next.js (App Router) + TypeScript
-- Tailwind CSS
+## Что реализовано
+
+- Регистрация, логин и logout через Auth.js Credentials
+- Защищенные пользовательские страницы
+- CRUD колод
+- CRUD карточек внутри колод
+- Учебная сессия с оценками `Сложно / Нормально / Легко`
+- Алгоритм интервального повторения
+- `ReviewHistory`, streak и пользовательская статистика
+- Achievements с unlock-логикой на сервере
+- AI-генерация карточек: `prompt -> preview -> confirm save`
+- Browser TTS для озвучки слов
+- Installable PWA: manifest, service worker, иконки, install prompt
+- Демо-seed с готовым пользователем, колодами, карточками и review history
+
+## Стек
+
+- Next.js 16, App Router, React 19
+- TypeScript
+- Tailwind CSS v4
 - Prisma ORM
 - PostgreSQL
-- Auth.js (NextAuth) + Credentials
-- bcryptjs
-- zod
+- NextAuth / Auth.js
+- Zod
 
-## Реализовано
+## Быстрый старт
 
-- Регистрация, логин и logout
-- Защищенные страницы `/decks/**`
-- Ownership-check на сервере для колод и карточек
-- CRUD колод
-- CRUD карточек
-- Режим обучения по колоде
-- Озвучка слова через browser Web Speech API (TTS)
-- Упрощенный алгоритм интервального повторения
-- Хранение прогресса карточек и ReviewHistory
-- Daily streak + агрегированная статистика пользователя
-- Achievements (unlock'и хранятся в БД, определения в коде)
-- AI генерация карточек по prompt (preview + confirm save)
+1. Установить зависимости:
 
-## Режим обучения
-
-На странице колоды есть кнопка `Начать обучение`.
-
-Учебная сессия:
-
-1. Загружает карточки колоды, которые доступны к повторению (`nextReviewAt IS NULL` или `nextReviewAt <= now`).
-2. Показывает слово.
-3. После кнопки `Показать ответ` показывает перевод/пример/картинку.
-4. Пользователь выбирает оценку: `Сложно`, `Нормально`, `Легко`.
-5. Сервер пересчитывает интервал, обновляет прогресс карточки и пишет запись в `ReviewHistory`.
-6. После прохождения всех карточек показывается экран завершения со статистикой сессии.
-7. После каждого review на сервере обновляются `DailyStudyActivity`, `UserStats`, streak и achievements.
-
-## Озвучка (MVP)
-
-- Озвучка работает только в браузере через `window.speechSynthesis` / `SpeechSynthesisUtterance`.
-- Серверный TTS не используется, mp3-файлы не генерируются и не хранятся.
-- Внешние TTS API не используются.
-- Качество и доступность голосов зависят от устройства, ОС и браузера.
-- Для карточки можно указать `languageCode` (опционально), fallback для озвучки: `en-US`.
-
-## Streak и активности
-
-Модели:
-
-- `DailyStudyActivity(userId, activityDate, reviewsCount, sessionsCount)`
-- `UserStats(currentStreak, longestStreak, totalReviewedCards, totalStudySessions, lastStudyDate)`
-
-Логика streak (выполняется на сервере после каждого review):
-
-1. Если активность уже была в этот день -> `currentStreak` не растет.
-2. Если последняя активность была вчера -> `currentStreak + 1`.
-3. Если пропуск больше 1 дня -> `currentStreak = 1`.
-4. `longestStreak = max(longestStreak, currentStreak)`.
-5. `totalReviewedCards` увеличивается на каждый review.
-6. `totalStudySessions` в MVP увеличивается один раз за день (в первый review дня).
-
-## Achievements
-
-Определения хранятся в коде (`src/entities/achievement/model/types.ts`), unlock'и в таблице `Achievement`:
-
-- `FIRST_REVIEW`
-- `FIRST_DECK_COMPLETED`
-- `STREAK_3`
-- `STREAK_7`
-- `REVIEWS_10`
-- `REVIEWS_50`
-
-Дубли не допускаются за счет `@@unique([userId, code])` + серверной проверки перед сохранением.
-
-`FIRST_DECK_COMPLETED` открывается, когда в колоде не остается карточек с `repetitionsCount = 0`.
-
-## AI генерация карточек
-
-Сценарий:
-
-1. Пользователь открывает колоду.
-2. Нажимает `Generate with AI`.
-3. Вводит `prompt` и `cardsCount` (1..20).
-4. Сервер запрашивает AI и возвращает preview.
-5. Пользователь подтверждает сохранение.
-6. Карточки сохраняются в колоду.
-
-Интеграция:
-
-- endpoint: `POST https://kong-proxy.yc.amvera.ru/api/v1/models/gpt`
-- auth: заголовок `X-Auth-Token: Bearer <OPENAI_API_KEY>`
-- structured output: формат JSON задается в тексте prompt
-- ключ используется только на сервере (`OPENAI_API_KEY`), на клиент не уходит
-
-Ожидаемая структура:
-
-```json
-{
-  "cards": [
-    {
-      "word": "travel",
-      "translation": "путешествие",
-      "example": "I love to travel in summer.",
-      "imagePrompt": "optional"
-    }
-  ]
-}
+```bash
+npm install
 ```
 
-## Алгоритм интервального повторения (MVP)
+2. Создать локальный `.env`:
 
-Для карточки храним:
+```bash
+cp .env.example .env
+```
+
+3. Заполнить переменные окружения:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5434/leximemo?schema=public"
+DIRECT_URL="postgresql://postgres:postgres@localhost:5434/leximemo?schema=public"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-long-random-secret"
+OPENAI_API_KEY="optional-for-ai-preview"
+OPENAI_MODEL="gpt"
+SEED_TEST_EMAIL="demo@leximemo.local"
+SEED_TEST_PASSWORD="demo12345"
+SEED_TEST_NAME="Demo User"
+```
+
+4. Сгенерировать Prisma Client:
+
+```bash
+npm run prisma:generate
+```
+
+5. Применить миграции:
+
+Для локальной разработки:
+
+```bash
+npm run prisma:migrate
+```
+
+Для готовой БД или деплоя:
+
+```bash
+npm run prisma:migrate:deploy
+```
+
+6. Загрузить демо-данные:
+
+```bash
+npm run prisma:seed
+```
+
+7. Запустить проект:
+
+```bash
+npm run dev
+```
+
+Проверка production-сборки:
+
+```bash
+npm run check
+```
+
+## Переменные окружения
+
+- `DATABASE_URL`: основное подключение Prisma runtime
+- `DIRECT_URL`: прямое подключение для миграций Prisma
+- `NEXTAUTH_URL`: базовый URL приложения
+- `NEXTAUTH_SECRET`: секрет для Auth.js
+- `OPENAI_API_KEY`: серверный токен для AI preview/save
+- `OPENAI_MODEL`: имя модели для AI endpoint
+- `SEED_TEST_EMAIL`: email демо-пользователя
+- `SEED_TEST_PASSWORD`: пароль демо-пользователя
+- `SEED_TEST_NAME`: имя демо-пользователя
+
+## Prisma и служебные команды
+
+```bash
+npm run prisma:format
+npm run prisma:generate
+npm run prisma:migrate -- --name <migration_name>
+npm run prisma:migrate
+npm run prisma:migrate:deploy
+npm run prisma:studio
+npm run prisma:seed
+```
+
+## Демо-данные
+
+После `npm run prisma:seed` по умолчанию создается пользователь:
+
+- email: `demo@leximemo.local`
+- password: `demo12345`
+
+Seed подготавливает:
+
+- несколько колод
+- набор карточек с разным прогрессом
+- review history за несколько дней
+- streak и агрегированную статистику
+- achievements для красивой демонстрации прогресса
+
+## PWA
+
+В проекте реализована installable PWA без тяжелого offline-first слоя.
+
+Что есть:
+
+- `src/app/manifest.ts` с корректным web app manifest
+- `src/app/pwa-icons/[size]/route.ts` для генерации PWA-иконок `180`, `192`, `512`
+- `public/sw.js` с базовым service worker
+- `src/shared/pwa/pwa-bootstrap.tsx` для регистрации service worker
+- `src/shared/pwa/install-prompt.tsx` для ненавязчивой кнопки установки
+
+Что кэшируется:
+
+- базовая оболочка приложения
+- `login`, `register`, `offline`
+- manifest и иконки
+- часть статических ассетов Next.js
+
+Что не реализовано специально:
+
+- offline-модификации данных
+- background sync
+- push notifications
+- offline auth/API layer
+
+### Как проверить PWA локально
+
+1. Запустить production-режим:
+
+```bash
+npm run build
+npm run start
+```
+
+2. Открыть `http://localhost:3000` в Chrome или Edge.
+3. Проверить в DevTools -> `Application`:
+- `Manifest`
+- `Service Workers`
+- `Installability`
+4. Установить приложение через кнопку браузера или встроенный install prompt.
+
+Замечание:
+
+- `localhost` подходит для service worker.
+- Для установки на реальное мобильное устройство нужен HTTPS-деплой. Локальный IP без HTTPS для PWA обычно недостаточен.
+
+## AI generation
+
+AI-генерация работает только на сервере.
+
+Поток:
+
+1. Пользователь открывает колоду.
+2. Нажимает блок AI-генерации.
+3. Вводит тему и количество карточек.
+4. Сервер обращается к upstream AI endpoint.
+5. Возвращается preview карточек.
+6. Пользователь подтверждает сохранение в колоду.
+
+Особенности:
+
+- ключ не уходит на клиент
+- без `OPENAI_API_KEY` preview/save вернет понятную ошибку конфигурации
+- формат ответа строго валидируется через Zod
+
+## Интервальное повторение
+
+Алгоритм реализован в [`src/features/review/model/spaced-repetition.ts`](/Users/firkatdavletov/WebProjects/leximemo/src/features/review/model/spaced-repetition.ts).
+
+Хранимые поля карточки:
 
 - `repetitionsCount`
 - `intervalDays`
@@ -125,119 +214,46 @@
 - `lastGrade`
 - `mistakesCount`
 
-Формула:
+Логика MVP:
 
-- Первая оценка:
-  - `Сложно` -> `1` день
-  - `Нормально` -> `2` дня
-  - `Легко` -> `4` дня
-- Далее:
-  - `Сложно` -> `max(1, floor(currentInterval * 0.7))`
-  - `Нормально` -> `max(1, ceil(currentInterval * 1.8))`
-  - `Легко` -> `max(2, ceil(currentInterval * 2.5))`
+- первая оценка задает начальный интервал `1 / 2 / 4` дня
+- дальше интервал растет или уменьшается в зависимости от оценки
+- `easeFactor` ограничен диапазоном
+- после review сервер обновляет карточку, пишет `ReviewHistory`, streak, stats и achievements
 
-`easeFactor` тоже обновляется (упрощенно, с ограничением диапазона), чтобы метрику можно было использовать в следующих этапах.
+## Архитектура
 
-## Быстрый старт
+Краткая архитектура вынесена в:
 
-1. Установите зависимости:
+- [`docs/architecture.md`](/Users/firkatdavletov/WebProjects/leximemo/docs/architecture.md)
 
-```bash
-npm install
-```
+Сценарий показа на защите:
 
-2. Создайте `.env`:
+- [`docs/demo-script.md`](/Users/firkatdavletov/WebProjects/leximemo/docs/demo-script.md)
 
-```bash
-cp .env.example .env
-```
+## Ограничения MVP
 
-3. Проверьте переменные в `.env`:
+- нет полноценного offline-first режима
+- нет синхронизации при конфликтующих офлайн-изменениях
+- нет push notifications
+- TTS зависит от браузера и доступных системных голосов
+- AI-генерация зависит от внешнего upstream-сервиса
+- нет отдельного тестового пакета с e2e/unit-инфраструктурой
 
-- `DATABASE_URL`
-- `DIRECT_URL`
-- `NEXTAUTH_URL`
-- `NEXTAUTH_SECRET`
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL`
+## Возможные направления развития
 
-Пример:
+- экспорт и импорт колод
+- shared/public decks
+- мультиязычные профили и настройки пользователя
+- медиа-вложения и серверный TTS
+- более продвинутый scheduling-алгоритм
+- push-напоминания о повторении
+- полноценный offline mode с синхронизацией
 
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/firkatdavletov?schema=public"
-DIRECT_URL="postgresql://postgres:postgres@localhost:5433/firkatdavletov?schema=public"
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-long-random-secret"
-OPENAI_API_KEY="your-token"
-OPENAI_MODEL="gpt"
-```
+## Полезные файлы
 
-4. Примените миграции и сгенерируйте Prisma Client:
-
-```bash
-npm run prisma:generate
-npm run prisma:migrate -- --name streaks_and_ai
-```
-
-5. Запустите seed:
-
-```bash
-npm run prisma:seed
-```
-
-6. Запустите приложение:
-
-```bash
-npm run dev
-```
-
-## Тестовый пользователь
-
-После `npm run prisma:seed`:
-
-- email: `demo@leximemo.local`
-- password: `demo12345`
-- создается демо-колода `Demo English Deck` с карточками
-
-## Маршруты страниц
-
-- `/login`
-- `/register`
-- `/decks`
-- `/decks/new`
-- `/decks/[deckId]`
-- `/decks/[deckId]/edit`
-- `/decks/[deckId]/cards/new`
-- `/decks/[deckId]/cards/[cardId]/edit`
-- `/decks/[deckId]/study`
-
-## API маршруты
-
-- `GET /api/health`
-- `POST /api/auth/register`
-- `GET|POST /api/auth/[...nextauth]`
-- `GET|POST /api/decks`
-- `GET|PUT|DELETE /api/decks/[deckId]`
-- `GET|POST /api/decks/[deckId]/cards`
-- `GET|PUT|DELETE /api/decks/[deckId]/cards/[cardId]`
-- `GET /api/decks/[deckId]/study`
-- `POST /api/decks/[deckId]/study/review`
-- `POST /api/decks/[deckId]/ai/preview`
-- `POST /api/decks/[deckId]/ai/save`
-
-## Prisma команды
-
-```bash
-npm run prisma:format
-npm run prisma:generate
-npm run prisma:migrate -- --name <migration_name>
-npm run prisma:studio
-npm run prisma:seed
-```
-
-## Безопасность
-
-- Пароли хранятся только в виде хеша (`passwordHash`).
-- Любые приватные операции выполняются только от текущего пользователя.
-- На сервере везде выполняется ownership-check.
-- Нельзя читать/изменять/удалять чужие колоды, карточки и review-данные.
+- [`src/app/manifest.ts`](/Users/firkatdavletov/WebProjects/leximemo/src/app/manifest.ts)
+- [`public/sw.js`](/Users/firkatdavletov/WebProjects/leximemo/public/sw.js)
+- [`prisma/seed.mjs`](/Users/firkatdavletov/WebProjects/leximemo/prisma/seed.mjs)
+- [`docs/demo-script.md`](/Users/firkatdavletov/WebProjects/leximemo/docs/demo-script.md)
+- [`docs/architecture.md`](/Users/firkatdavletov/WebProjects/leximemo/docs/architecture.md)

@@ -8,6 +8,7 @@ export type CardDto = {
   languageCode: string | null;
   example: string | null;
   imageUrl: string | null;
+  isDue: boolean;
   repetitionsCount: number;
   intervalDays: number;
   easeFactor: number;

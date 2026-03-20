@@ -6,6 +6,12 @@ import { FormEvent, useState } from "react";
 
 import type { CardItemDto } from "@/entities/card/model/types";
 import { buttonClassName } from "@/shared/ui/button";
+import { FeedbackMessage } from "@/shared/ui/feedback-message";
+import {
+  helperTextClassName,
+  inputClassName,
+  textareaClassName,
+} from "@/shared/ui/form-fields";
 import type { ApiError, ApiSuccess } from "@/shared/types/api";
 
 type CardFormProps = {
@@ -58,63 +64,75 @@ export function CardForm({
     event.preventDefault();
 
     if (!state.word.trim() || !state.translation.trim()) {
-      setError("Поля word и translation обязательны.");
+      setError("Поля «слово» и «перевод» обязательны.");
       return;
     }
 
     setError(null);
     setIsSubmitting(true);
 
-    const response = await fetch(endpoint, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        word: state.word,
-        translation: state.translation,
-        languageCode: state.languageCode,
-        example: state.example,
-        imageUrl: state.imageUrl,
-      }),
-    });
+    try {
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          word: state.word,
+          translation: state.translation,
+          languageCode: state.languageCode,
+          example: state.example,
+          imageUrl: state.imageUrl,
+        }),
+      });
 
-    const responseBody = (await response.json().catch(() => null)) as
-      | ApiSuccess<CardItemDto>
-      | ApiError
-      | null;
+      const responseBody = (await response.json().catch(() => null)) as
+        | ApiSuccess<CardItemDto>
+        | ApiError
+        | null;
 
-    setIsSubmitting(false);
+      if (!response.ok) {
+        setError(
+          responseBody && !responseBody.ok
+            ? responseBody.error
+            : "Не удалось сохранить карточку.",
+        );
+        return;
+      }
 
-    if (!response.ok) {
-      setError(responseBody && !responseBody.ok ? responseBody.error : "Не удалось сохранить карточку.");
-      return;
+      const successKey = mode === "create" ? "card-created" : "card-updated";
+      router.push(`/decks/${deckId}?success=${successKey}`);
+      router.refresh();
+    } catch {
+      setError("Не удалось сохранить карточку. Проверьте соединение и попробуйте снова.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    router.push(`/decks/${deckId}`);
-    router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isSubmitting}>
       <div className="space-y-1.5">
         <label htmlFor="card-word" className="text-sm font-medium text-foreground">
-          Word
+          Слово
         </label>
         <input
           id="card-word"
           type="text"
           value={state.word}
           onChange={(event) => setState((prev) => ({ ...prev, word: event.target.value }))}
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
+          placeholder="travel"
           required
           maxLength={160}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "card-form-error" : undefined}
         />
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="card-translation" className="text-sm font-medium text-foreground">
-          Translation
+          Перевод
         </label>
         <input
           id="card-translation"
@@ -123,15 +141,18 @@ export function CardForm({
           onChange={(event) =>
             setState((prev) => ({ ...prev, translation: event.target.value }))
           }
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
+          placeholder="путешествие"
           required
           maxLength={300}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "card-form-error" : undefined}
         />
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="card-language-code" className="text-sm font-medium text-foreground">
-          Language code (опционально)
+          Код языка для озвучки (опционально)
         </label>
         <input
           id="card-language-code"
@@ -140,15 +161,19 @@ export function CardForm({
           onChange={(event) =>
             setState((prev) => ({ ...prev, languageCode: event.target.value }))
           }
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
           maxLength={35}
           placeholder="en-US"
+          aria-describedby="card-language-code-hint"
         />
+        <p id="card-language-code-hint" className={helperTextClassName}>
+          Используется для browser TTS. Подходит формат BCP-47, например `en-US`.
+        </p>
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="card-example" className="text-sm font-medium text-foreground">
-          Example (опционально)
+          Пример (опционально)
         </label>
         <textarea
           id="card-example"
@@ -156,14 +181,15 @@ export function CardForm({
           onChange={(event) =>
             setState((prev) => ({ ...prev, example: event.target.value }))
           }
-          className="min-h-24 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={`${textareaClassName} min-h-24`}
           maxLength={1000}
+          placeholder="I love to travel in summer."
         />
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="card-image-url" className="text-sm font-medium text-foreground">
-          Image URL (опционально)
+          URL изображения (опционально)
         </label>
         <input
           id="card-image-url"
@@ -172,15 +198,16 @@ export function CardForm({
           onChange={(event) =>
             setState((prev) => ({ ...prev, imageUrl: event.target.value }))
           }
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
           maxLength={1000}
+          placeholder="https://example.com/image.jpg"
         />
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+        <FeedbackMessage variant="error" className="py-2" title="Ошибка сохранения">
+          <span id="card-form-error">{error}</span>
+        </FeedbackMessage>
       ) : null}
 
       <div className="flex flex-wrap gap-2">

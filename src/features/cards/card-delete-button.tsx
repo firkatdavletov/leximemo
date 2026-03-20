@@ -26,18 +26,24 @@ export function CardDeleteButton({ deckId, cardId }: CardDeleteButtonProps) {
     setError(null);
     setIsDeleting(true);
 
-    const response = await fetch(`/api/decks/${deckId}/cards/${cardId}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`/api/decks/${deckId}/cards/${cardId}`, {
+        method: "DELETE",
+      });
 
-    if (!response.ok) {
-      const errorBody = (await response.json().catch(() => null)) as ApiError | null;
-      setError(errorBody?.error ?? "Не удалось удалить карточку.");
+      if (!response.ok) {
+        const errorBody = (await response.json().catch(() => null)) as ApiError | null;
+        setError(errorBody?.error ?? "Не удалось удалить карточку.");
+        return;
+      }
+
+      router.push(`/decks/${deckId}?success=card-deleted`);
+      router.refresh();
+    } catch {
+      setError("Не удалось удалить карточку. Проверьте соединение и попробуйте снова.");
+    } finally {
       setIsDeleting(false);
-      return;
     }
-
-    router.refresh();
   }
 
   return (
@@ -46,6 +52,7 @@ export function CardDeleteButton({ deckId, cardId }: CardDeleteButtonProps) {
         type="button"
         onClick={handleDelete}
         disabled={isDeleting}
+        aria-label="Удалить карточку"
         className={buttonClassName({
           variant: "ghost",
           size: "sm",

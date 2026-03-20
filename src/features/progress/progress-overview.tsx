@@ -24,14 +24,16 @@ function getDayLabel(value: number): string {
 }
 
 export function ProgressOverview({ progress }: ProgressOverviewProps) {
+  const unlockedCount = progress.achievements.filter((achievement) => achievement.unlocked).length;
+
   return (
     <section className="grid gap-4 xl:grid-cols-[2fr_3fr]">
       <article className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-foreground">Статистика</h2>
+        <h2 className="text-lg font-semibold text-foreground">Прогресс обучения</h2>
 
-        <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <li className="rounded-xl border border-border bg-white p-3">
-            <p className="text-xs uppercase tracking-wide text-muted">Current streak</p>
+            <p className="text-xs uppercase tracking-wide text-muted">Текущий streak</p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.currentStreak}
             </p>
@@ -39,7 +41,7 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
           </li>
 
           <li className="rounded-xl border border-border bg-white p-3">
-            <p className="text-xs uppercase tracking-wide text-muted">Longest streak</p>
+            <p className="text-xs uppercase tracking-wide text-muted">Лучший streak</p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.longestStreak}
             </p>
@@ -47,24 +49,36 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
           </li>
 
           <li className="rounded-xl border border-border bg-white p-3">
-            <p className="text-xs uppercase tracking-wide text-muted">Total reviewed</p>
+            <p className="text-xs uppercase tracking-wide text-muted">Всего повторений</p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.totalReviewedCards}
             </p>
             <p className="mt-1 text-xs text-muted">карточек</p>
           </li>
+
+          <li className="rounded-xl border border-border bg-white p-3">
+            <p className="text-xs uppercase tracking-wide text-muted">Учебных дней</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">
+              {progress.stats.totalStudySessions}
+            </p>
+            <p className="mt-1 text-xs text-muted">дней с review-активностью</p>
+          </li>
         </ul>
 
         <p className="mt-4 text-xs text-muted">
-          Всего учебных дней: {progress.stats.totalStudySessions}
           {progress.stats.lastStudyDate
             ? ` • Последняя активность: ${dateFormatter.format(new Date(progress.stats.lastStudyDate))}`
-            : ""}
+            : "Пока еще нет зафиксированной учебной активности."}
         </p>
       </article>
 
       <article className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-foreground">Достижения</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-foreground">Достижения</h2>
+          <p className="text-sm text-muted">
+            Открыто: {unlockedCount} / {progress.achievements.length}
+          </p>
+        </div>
 
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {progress.achievements.map((achievement) => (

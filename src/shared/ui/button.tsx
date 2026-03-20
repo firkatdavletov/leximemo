@@ -13,11 +13,11 @@ type ButtonClassOptions = {
 };
 
 const baseClassName =
-  "inline-flex items-center justify-center rounded-xl font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center whitespace-nowrap rounded-xl font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:cursor-not-allowed disabled:opacity-60";
 
 const variantClassNames: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-foreground hover:bg-accent/90",
-  secondary: "border border-border bg-surface text-foreground hover:bg-slate-100",
+  secondary: "border border-border bg-white text-foreground hover:bg-slate-50",
   ghost: "text-foreground hover:bg-slate-100",
 };
 

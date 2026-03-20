@@ -6,6 +6,12 @@ import { FormEvent, useState } from "react";
 
 import type { DeckItemDto } from "@/entities/deck/model/types";
 import { buttonClassName } from "@/shared/ui/button";
+import { FeedbackMessage } from "@/shared/ui/feedback-message";
+import {
+  helperTextClassName,
+  inputClassName,
+  textareaClassName,
+} from "@/shared/ui/form-fields";
 import type { ApiError, ApiSuccess } from "@/shared/types/api";
 
 type DeckFormProps = {
@@ -52,38 +58,51 @@ export function DeckForm({
     setError(null);
     setIsSubmitting(true);
 
-    const response = await fetch(endpoint, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title: state.title,
-        description: state.description,
-      }),
-    });
+    try {
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: state.title,
+          description: state.description,
+        }),
+      });
 
-    const responseBody = (await response.json().catch(() => null)) as
-      | ApiSuccess<DeckItemDto>
-      | ApiError
-      | null;
+      const responseBody = (await response.json().catch(() => null)) as
+        | ApiSuccess<DeckItemDto>
+        | ApiError
+        | null;
 
-    setIsSubmitting(false);
+      if (!response.ok) {
+        setError(
+          responseBody && !responseBody.ok
+            ? responseBody.error
+            : "Не удалось сохранить колоду.",
+        );
+        return;
+      }
 
-    if (!response.ok) {
-      setError(responseBody && !responseBody.ok ? responseBody.error : "Не удалось сохранить колоду.");
-      return;
+      const savedDeckId =
+        responseBody && responseBody.ok ? responseBody.data.deck.id : deckId;
+      const successKey = mode === "create" ? "deck-created" : "deck-updated";
+      const destination =
+        mode === "create"
+          ? `/decks/${savedDeckId}?success=${successKey}`
+          : `${successHref}?success=${successKey}`;
+
+      router.push(destination);
+      router.refresh();
+    } catch {
+      setError("Не удалось сохранить колоду. Проверьте соединение и попробуйте снова.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const savedDeckId =
-      responseBody && responseBody.ok ? responseBody.data.deck.id : deckId;
-
-    router.push(mode === "create" ? `/decks/${savedDeckId}` : successHref);
-    router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isSubmitting}>
       <div className="space-y-1.5">
         <label htmlFor="deck-title" className="text-sm font-medium text-foreground">
           Название
@@ -93,15 +112,21 @@ export function DeckForm({
           type="text"
           value={state.title}
           onChange={(event) => setState((prev) => ({ ...prev, title: event.target.value }))}
-          className="h-11 w-full rounded-xl border border-border bg-white px-3 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={inputClassName}
+          placeholder="Например: Английский A1"
           required
           maxLength={120}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "deck-form-error" : "deck-title-hint"}
         />
+        <p id="deck-title-hint" className={helperTextClassName}>
+          Короткое и понятное название поможет быстро найти колоду на демо.
+        </p>
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="deck-description" className="text-sm font-medium text-foreground">
-          Описание
+          Описание (опционально)
         </label>
         <textarea
           id="deck-description"
@@ -109,15 +134,16 @@ export function DeckForm({
           onChange={(event) =>
             setState((prev) => ({ ...prev, description: event.target.value }))
           }
-          className="min-h-28 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm outline-none ring-accent/40 transition focus:ring-2"
+          className={`${textareaClassName} min-h-28`}
+          placeholder="Кратко опишите тему, уровень или формат карточек."
           maxLength={500}
         />
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+        <FeedbackMessage variant="error" className="py-2" title="Ошибка сохранения">
+          <span id="deck-form-error">{error}</span>
+        </FeedbackMessage>
       ) : null}
 
       <div className="flex flex-wrap gap-2">
