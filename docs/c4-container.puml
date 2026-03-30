@@ -1,0 +1,32 @@
+@startuml
+title LexiMemo - C4 Container View
+
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 140
+skinparam packageStyle rectangle
+
+actor "Пользователь" as User
+
+rectangle "External System\nAI Generation Service\n\nВнешний LLM endpoint для preview карточек." as AI #FDECEC
+rectangle "External System\nBrowser Speech API\n\nВстроенный API браузера для озвучки слов." as Speech #F8F3FF
+
+package "System: LexiMemo" #F7FAFC {
+  rectangle "Container\nWeb Client / PWA\n\nNext.js client runtime, React 19, Service Worker\nИнтерактивные формы, StudySession, AI preview/save,\ninstall prompt, browser TTS." as Client #EEF6FF
+
+  rectangle "Container\nNext.js Application Server\n\nNext.js 16, App Router, Auth.js, Zod, Prisma\nSSR/RSC, route handlers, access checks,\nCRUD, review flow, progress, AI integration." as Server #EAFBF1
+
+  database "ContainerDb\nPostgreSQL\n\nUser, Deck, Card, ReviewHistory,\nDailyStudyActivity, UserStats, Achievement." as DB #FFF7E6
+}
+
+User --> Client : Использует приложение
+Client --> Server : HTML/RSC, navigation,\nJSON API `/api/*`\nHTTPS
+Server --> Client : SSR/RSC markup,\nJSON responses,\nsession cookies
+Server --> DB : Читает и пишет данные\nPrisma ORM
+Server --> AI : Запрашивает preview карточек\nHTTPS / JSON
+Client --> Speech : Озвучивает слово\nWeb Speech API
+
+@enduml

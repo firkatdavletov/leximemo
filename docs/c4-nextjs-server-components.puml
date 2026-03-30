@@ -1,0 +1,64 @@
+@startuml
+title LexiMemo - C4 Component View for Next.js Application Server
+
+left to right direction
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam componentStyle rectangle
+skinparam wrapWidth 230
+skinparam maxMessageSize 140
+skinparam packageStyle rectangle
+
+rectangle "External Container\nWeb Client / PWA" as Client #EEF6FF
+database "External ContainerDb\nPostgreSQL" as DB #FFF7E6
+rectangle "External System\nAI Generation Service" as AI #FDECEC
+
+package "Container: Next.js Application Server" #F7FAFC {
+  component "Component\nApp Router Pages & Layouts\n\n`src/app/(app)` `src/app/(auth)`\n`src/widgets/header`\nSSR/RSC rendering, redirects,\ninitial data loading." as Pages #EAFBF1
+
+  component "Component\nAPI Route Handlers\n\n`src/app/api/**`\nJSON endpoints for auth, decks,\ncards, study, AI, health." as Api #EAFBF1
+
+  component "Component\nAuth & Session\n\n`src/server/auth/**`\nCredentials auth, JWT session,\ncurrent user resolution." as Auth #FDFDEA
+
+  component "Component\nValidation Layer\n\n`src/server/validation/**`\n`src/server/http/validation.ts`\nZod schemas and request validation." as Validation #FFFDF2
+
+  component "Component\nDeck Service\n\n`src/server/decks/deck.service.ts`\nDeck CRUD and ownership checks." as DeckService #EAFBF1
+
+  component "Component\nCard Service\n\n`src/server/cards/card.service.ts`\nCard CRUD and bulk save for AI cards." as CardService #EAFBF1
+
+  component "Component\nReview Service\n\n`src/server/review/review.service.ts`\n`src/features/review/model/spaced-repetition.ts`\nDue queue and review submission." as ReviewService #EAFBF1
+
+  component "Component\nProgress Service\n\n`src/server/progress/progress.service.ts`\nStreak, daily activity,\nstats, achievements." as ProgressService #EAFBF1
+
+  component "Component\nAI Card Generation Service\n\n`src/server/ai/ai-card-generation.service.ts`\nPrompt builder, upstream call,\nresponse normalization." as AISvc #EAFBF1
+
+  component "Component\nPrisma Client Adapter\n\n`src/lib/prisma.ts`\nTyped access to PostgreSQL." as PrismaAdapter #F4F1FF
+}
+
+Client --> Pages : Navigation and page requests
+Client --> Api : `fetch()` from client components
+
+Pages --> Auth : `getCurrentUser()` /\n`getCurrentUserId()`
+Pages --> DeckService : List/get deck data
+Pages --> CardService : List/get card data
+Pages --> ProgressService : Progress summary
+
+Api --> Auth : Protected endpoints
+Api --> Validation : Parse and validate body
+Api --> DeckService : Deck CRUD
+Api --> CardService : Card CRUD and AI save
+Api --> ReviewService : Study session and review submit
+Api --> AISvc : AI preview generation
+
+ReviewService --> ProgressService : Register review progress\ninside transaction
+
+Auth --> PrismaAdapter : User lookup
+DeckService --> PrismaAdapter : Deck queries
+CardService --> PrismaAdapter : Card queries
+ReviewService --> PrismaAdapter : Review/card queries
+ProgressService --> PrismaAdapter : Stats/activity queries
+
+AISvc --> AI : HTTPS / JSON
+PrismaAdapter --> DB : SQL via Prisma ORM
+
+@enduml
