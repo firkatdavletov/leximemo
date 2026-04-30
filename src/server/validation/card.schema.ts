@@ -51,4 +51,12 @@ export const cardSchema = z.object({
   ),
 });
 
+export const cardsImportSchema = z.object({
+  cards: z
+    .array(cardSchema)
+    .min(1, "Массив cards должен содержать хотя бы одну карточку.")
+    .max(200, "За один импорт можно добавить не более 200 карточек."),
+});
+
 export type CardInput = z.infer<typeof cardSchema>;
+export type CardsImportInput = z.infer<typeof cardsImportSchema>;

@@ -132,7 +132,9 @@ export async function createManyCardsInDeck(
   cards: Array<{
     word: string;
     translation: string;
+    languageCode?: string | null;
     example?: string | null;
+    imageUrl?: string | null;
   }>,
 ): Promise<number | null> {
   const deck = await prisma.deck.findFirst({
@@ -158,8 +160,9 @@ export async function createManyCardsInDeck(
       deckId,
       word: card.word.trim(),
       translation: card.translation.trim(),
+      languageCode: card.languageCode?.trim() || null,
       example: card.example?.trim() || null,
-      imageUrl: null,
+      imageUrl: card.imageUrl?.trim() || null,
     })),
   });
 
