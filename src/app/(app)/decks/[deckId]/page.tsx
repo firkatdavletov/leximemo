@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { AICardGenerator } from "@/features/ai/ai-card-generator";
 import { CardDeleteButton } from "@/features/cards/card-delete-button";
+import { CardsJsonImport } from "@/features/cards/cards-json-import";
 import { DeckDeleteButton } from "@/features/decks/deck-delete-button";
 import { getCurrentUserId } from "@/server/auth/session";
 import { listCardsByDeck } from "@/server/cards/card.service";
@@ -112,6 +113,8 @@ export default async function DeckDetailsPage({ params }: DeckDetailsPageProps) 
       </section>
 
       <AICardGenerator deckId={deck.id} />
+
+      <CardsJsonImport deckId={deck.id} />
 
       {cards.length === 0 ? (
         <EmptyState

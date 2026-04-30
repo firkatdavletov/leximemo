@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 
-import { CardsJsonImport } from "@/features/cards/cards-json-import";
 import { DeckForm } from "@/features/decks/deck-form";
 import { getCurrentUserId } from "@/server/auth/session";
 import { getUserDeckById } from "@/server/decks/deck.service";
@@ -47,8 +46,6 @@ export default async function EditDeckPage({ params }: EditDeckPageProps) {
           successHref={`/decks/${deck.id}`}
         />
       </section>
-
-      <CardsJsonImport deckId={deck.id} />
     </Container>
   );
 }
