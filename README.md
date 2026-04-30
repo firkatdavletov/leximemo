@@ -95,6 +95,10 @@ npm run dev
 npm run check
 ```
 
+Подробная инструкция по деплою на сервер:
+
+- [`docs/deployment.md`](/Users/firkatdavletov/WebProjects/leximemo/docs/deployment.md)
+
 ## Переменные окружения
 
 - `DATABASE_URL`: основное подключение Prisma runtime
