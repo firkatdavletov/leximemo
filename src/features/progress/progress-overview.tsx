@@ -27,21 +27,6 @@ const achievementIconPaths: Record<AchievementCode, string> = {
   REVIEWS_50: "/icons/ic_fifty_repeats.png",
 };
 
-function getDayLabel(value: number): string {
-  const mod10 = value % 10;
-  const mod100 = value % 100;
-
-  if (mod10 === 1 && mod100 !== 11) {
-    return "день";
-  }
-
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
-    return "дня";
-  }
-
-  return "дней";
-}
-
 export function ProgressOverview({ progress }: ProgressOverviewProps) {
   const unlockedCount = progress.achievements.filter((achievement) => achievement.unlocked).length;
 
@@ -63,7 +48,6 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.currentStreak}
             </p>
-            <p className="mt-1 text-xs text-muted">{getDayLabel(progress.stats.currentStreak)}</p>
           </li>
 
           <li className="min-h-36 rounded-xl border border-border bg-white p-4">
@@ -78,7 +62,6 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.longestStreak}
             </p>
-            <p className="mt-1 text-xs text-muted">{getDayLabel(progress.stats.longestStreak)}</p>
           </li>
 
           <li className="min-h-36 rounded-xl border border-border bg-white p-4">
@@ -93,7 +76,6 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.totalReviewedCards}
             </p>
-            <p className="mt-1 text-xs text-muted">карточек</p>
           </li>
 
           <li className="min-h-36 rounded-xl border border-border bg-white p-4">
@@ -108,7 +90,6 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.totalStudySessions}
             </p>
-            <p className="mt-1 text-xs text-muted">дней</p>
           </li>
         </ul>
 
