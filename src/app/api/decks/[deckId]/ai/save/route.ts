@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import type {
@@ -97,6 +98,9 @@ export async function POST(request: Request, { params }: SaveRouteContext) {
   if (savedCount === null) {
     return notFound();
   }
+
+  revalidatePath(`/decks/${deckId}`);
+  revalidatePath("/decks");
 
   return NextResponse.json<ApiSuccess<AISaveGeneratedResponseDto>>(
     {
