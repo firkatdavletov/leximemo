@@ -16,7 +16,7 @@ const baseClassName =
   "inline-flex items-center justify-center whitespace-nowrap rounded-xl font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:cursor-not-allowed disabled:opacity-60";
 
 const variantClassNames: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-accent-foreground hover:bg-accent/90",
+  primary: "bg-accent !text-white hover:bg-accent/90",
   secondary: "border border-border bg-white text-foreground hover:bg-slate-50",
   ghost: "text-foreground hover:bg-slate-100",
 };
