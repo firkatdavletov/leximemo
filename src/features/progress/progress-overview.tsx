@@ -50,8 +50,8 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
       <article className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-foreground">Прогресс обучения</h2>
 
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <li className="rounded-xl border border-border bg-white p-3">
+        <ul className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+          <li className="min-h-36 rounded-xl border border-border bg-white p-4">
             <Image
               src={statsIconPaths.currentStreak}
               alt=""
@@ -66,7 +66,7 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
             <p className="mt-1 text-xs text-muted">{getDayLabel(progress.stats.currentStreak)}</p>
           </li>
 
-          <li className="rounded-xl border border-border bg-white p-3">
+          <li className="min-h-36 rounded-xl border border-border bg-white p-4">
             <Image
               src={statsIconPaths.longestStreak}
               alt=""
@@ -81,7 +81,7 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
             <p className="mt-1 text-xs text-muted">{getDayLabel(progress.stats.longestStreak)}</p>
           </li>
 
-          <li className="rounded-xl border border-border bg-white p-3">
+          <li className="min-h-36 rounded-xl border border-border bg-white p-4">
             <Image
               src={statsIconPaths.totalReviewedCards}
               alt=""
@@ -96,7 +96,7 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
             <p className="mt-1 text-xs text-muted">карточек</p>
           </li>
 
-          <li className="rounded-xl border border-border bg-white p-3">
+          <li className="min-h-36 rounded-xl border border-border bg-white p-4">
             <Image
               src={statsIconPaths.totalStudySessions}
               alt=""
@@ -108,7 +108,7 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.totalStudySessions}
             </p>
-            <p className="mt-1 text-xs text-muted">дней с review-активностью</p>
+            <p className="mt-1 text-xs text-muted">дней</p>
           </li>
         </ul>
 
@@ -137,13 +137,17 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
                   : "border-border bg-white"
               }`}
             >
-              <div className="flex gap-3">
+              <div className="flex items-start gap-3">
                 <Image
                   src={achievementIconPaths[achievement.code]}
                   alt=""
                   width={36}
                   height={36}
-                  className={achievement.unlocked ? "shrink-0" : "shrink-0 opacity-40 grayscale"}
+                  className={
+                    achievement.unlocked
+                      ? "size-9 shrink-0 object-contain"
+                      : "size-9 shrink-0 object-contain opacity-40 grayscale"
+                  }
                 />
                 <div>
                   <p className="text-sm font-medium text-foreground">{achievement.title}</p>
