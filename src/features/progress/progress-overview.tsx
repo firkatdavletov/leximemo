@@ -1,3 +1,6 @@
+import Image from "next/image";
+
+import type { AchievementCode } from "@/entities/achievement/model/types";
 import type { UserProgressDto } from "@/entities/progress/model/types";
 
 type ProgressOverviewProps = {
@@ -7,6 +10,22 @@ type ProgressOverviewProps = {
 const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
   dateStyle: "medium",
 });
+
+const statsIconPaths = {
+  currentStreak: "/icons/ic_current_strike.png",
+  longestStreak: "/icons/ic_best_strike.png",
+  totalReviewedCards: "/icons/ic_total_repeats.png",
+  totalStudySessions: "/icons/ic_education_days.png",
+} as const;
+
+const achievementIconPaths: Record<AchievementCode, string> = {
+  FIRST_REVIEW: "/icons/ic_first_repeat.png",
+  FIRST_DECK_COMPLETED: "/icons/ic_first_completed_card.png",
+  STREAK_3: "/icons/ic_three_days_strike.png",
+  STREAK_7: "/icons/ic_seven_days_strike.png",
+  REVIEWS_10: "/icons/ic_ten_repeats.png",
+  REVIEWS_50: "/icons/ic_fifty_repeats.png",
+};
 
 function getDayLabel(value: number): string {
   const mod10 = value % 10;
@@ -33,6 +52,13 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
 
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <li className="rounded-xl border border-border bg-white p-3">
+            <Image
+              src={statsIconPaths.currentStreak}
+              alt=""
+              width={32}
+              height={32}
+              className="mb-3"
+            />
             <p className="text-xs uppercase tracking-wide text-muted">Текущий streak</p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.currentStreak}
@@ -41,6 +67,13 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
           </li>
 
           <li className="rounded-xl border border-border bg-white p-3">
+            <Image
+              src={statsIconPaths.longestStreak}
+              alt=""
+              width={32}
+              height={32}
+              className="mb-3"
+            />
             <p className="text-xs uppercase tracking-wide text-muted">Лучший streak</p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.longestStreak}
@@ -49,6 +82,13 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
           </li>
 
           <li className="rounded-xl border border-border bg-white p-3">
+            <Image
+              src={statsIconPaths.totalReviewedCards}
+              alt=""
+              width={32}
+              height={32}
+              className="mb-3"
+            />
             <p className="text-xs uppercase tracking-wide text-muted">Всего повторений</p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.totalReviewedCards}
@@ -57,6 +97,13 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
           </li>
 
           <li className="rounded-xl border border-border bg-white p-3">
+            <Image
+              src={statsIconPaths.totalStudySessions}
+              alt=""
+              width={32}
+              height={32}
+              className="mb-3"
+            />
             <p className="text-xs uppercase tracking-wide text-muted">Учебных дней</p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.totalStudySessions}
@@ -90,8 +137,19 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
                   : "border-border bg-white"
               }`}
             >
-              <p className="text-sm font-medium text-foreground">{achievement.title}</p>
-              <p className="mt-1 text-xs text-muted">{achievement.description}</p>
+              <div className="flex gap-3">
+                <Image
+                  src={achievementIconPaths[achievement.code]}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className={achievement.unlocked ? "shrink-0" : "shrink-0 opacity-40 grayscale"}
+                />
+                <div>
+                  <p className="text-sm font-medium text-foreground">{achievement.title}</p>
+                  <p className="mt-1 text-xs text-muted">{achievement.description}</p>
+                </div>
+              </div>
               <p className="mt-2 text-xs text-muted">
                 {achievement.unlocked && achievement.unlockedAt
                   ? `Открыто: ${dateFormatter.format(new Date(achievement.unlockedAt))}`

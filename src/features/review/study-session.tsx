@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useEffectEvent, useState } from "react";
 
-import type { AchievementUnlockDto } from "@/entities/achievement/model/types";
+import type {
+  AchievementCode,
+  AchievementUnlockDto,
+} from "@/entities/achievement/model/types";
 import type {
   ReviewGrade,
   StudyCardDto,
@@ -37,6 +41,15 @@ const gradeLabels: Record<ReviewGrade, string> = {
   hard: "Сложно",
   normal: "Нормально",
   easy: "Легко",
+};
+
+const achievementIconPaths: Record<AchievementCode, string> = {
+  FIRST_REVIEW: "/icons/ic_first_repeat.png",
+  FIRST_DECK_COMPLETED: "/icons/ic_first_completed_card.png",
+  STREAK_3: "/icons/ic_three_days_strike.png",
+  STREAK_7: "/icons/ic_seven_days_strike.png",
+  REVIEWS_10: "/icons/ic_ten_repeats.png",
+  REVIEWS_50: "/icons/ic_fifty_repeats.png",
 };
 
 export function StudySession({ deckId }: StudySessionProps) {
@@ -301,10 +314,17 @@ export function StudySession({ deckId }: StudySessionProps) {
               <p className="text-xs uppercase tracking-wide text-muted">
                 Новые достижения
               </p>
-              <ul className="space-y-1 text-sm text-foreground">
+              <ul className="space-y-2 text-sm text-foreground">
                 {newlyUnlockedAchievements.map((achievement) => (
-                  <li key={achievement.code}>
-                    {achievement.title}
+                  <li key={achievement.code} className="flex items-center gap-2">
+                    <Image
+                      src={achievementIconPaths[achievement.code]}
+                      alt=""
+                      width={28}
+                      height={28}
+                      className="shrink-0"
+                    />
+                    <span>{achievement.title}</span>
                   </li>
                 ))}
               </ul>
