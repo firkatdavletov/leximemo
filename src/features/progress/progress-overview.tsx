@@ -59,7 +59,7 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
               height={32}
               className="mb-3"
             />
-            <p className="text-xs uppercase tracking-wide text-muted">Текущий streak</p>
+            <p className="text-xs uppercase tracking-wide text-muted">Текущая серия</p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.currentStreak}
             </p>
@@ -74,7 +74,7 @@ export function ProgressOverview({ progress }: ProgressOverviewProps) {
               height={32}
               className="mb-3"
             />
-            <p className="text-xs uppercase tracking-wide text-muted">Лучший streak</p>
+            <p className="text-xs uppercase tracking-wide text-muted">Лучшая серия</p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {progress.stats.longestStreak}
             </p>

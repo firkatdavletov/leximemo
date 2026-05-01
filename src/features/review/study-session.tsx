@@ -307,7 +307,7 @@ export function StudySession({ deckId }: StudySessionProps) {
 
         <div className="rounded-xl border border-border bg-white p-4">
           <p className="text-sm font-medium text-foreground">
-            Текущий streak: {currentStreak} {currentStreak === 1 ? "день" : "дней"}
+            Текущая серия: {currentStreak} {currentStreak === 1 ? "день" : "дней"}
           </p>
           {newlyUnlockedAchievements.length > 0 ? (
             <div className="mt-3 space-y-2">
@@ -377,7 +377,7 @@ export function StudySession({ deckId }: StudySessionProps) {
           <p className="mt-2 text-xl font-semibold text-foreground">{stats.reviewed}</p>
         </div>
         <div className="rounded-xl border border-border bg-white p-3">
-          <p className="text-xs uppercase tracking-wide text-muted">Текущий streak</p>
+          <p className="text-xs uppercase tracking-wide text-muted">Текущая серия</p>
           <p className="mt-2 text-xl font-semibold text-foreground">{currentStreak}</p>
         </div>
       </div>
